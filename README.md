@@ -25,5 +25,7 @@ We are dividing the application space in 32/64 bit. We can run 32 bit apps on 64
 
 - pytorch
 - [inference-perf](https://github.com/kubernetes-sigs/inference-perf/blob/main/docs/design.md#metrics-to-collect) looks good, but isn't ready yet
+- [fmperf](https://github.com/fmperf-project/fmperf)
+- [fmwork](https://github.com/IBM/fmwork)
 
 ...
