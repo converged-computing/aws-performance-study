@@ -31,3 +31,5 @@ We are dividing the application space in 32/64 bit. We can run 32 bit apps on 64
 - [hugging-face](https://huggingface.co/docs/transformers/v4.39.1/benchmarks)
 - [DeepGEMM](https://github.com/deepseek-ai/DeepGEMM)
 - [gpu-fryer](https://github.com/huggingface/gpu-fryer)
+- [DualPipe](https://github.com/deepseek-ai/DualPipe)
+- [nccl-tests](https://github.com/NVIDIA/nccl-tests)
