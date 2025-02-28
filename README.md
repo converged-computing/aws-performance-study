@@ -29,3 +29,5 @@ We are dividing the application space in 32/64 bit. We can run 32 bit apps on 64
 - [fmwork](https://github.com/IBM/fmwork)
 - [ai-benchmark](https://github.com/cloudmercato/ai-benchmark)
 - [hugging-face](https://huggingface.co/docs/transformers/v4.39.1/benchmarks)
+- [DeepGEMM](https://github.com/deepseek-ai/DeepGEMM)
+- [gpu-fryer](https://github.com/huggingface/gpu-fryer)
