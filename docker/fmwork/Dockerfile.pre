@@ -27,19 +27,7 @@ RUN apt-get update && \
 
 RUN python3 -m pip install --break-system-packages vllm
 RUN python3 -m pip install --break-system-packages huggingface-hub
-# RUN huggingface-cli download --cache-dir ./ --local-dir-use-symlinks False --revision main --local-dir models/granite-8b ibm-granite/granite-8b-code-base-128k
-WORKDIR /models/granite-8b
-COPY ./models/granite-8b/config.json ./config.json
-COPY ./models/granite-8b/generation_config.json ./generation_config.json
-COPY ./models/granite-8b/model-00001-of-00004.safetensors ./model-00001-of-00004.safetensors
-COPY ./models/granite-8b/model-00001-of-00004.safetensors ./model-00001-of-00004.safetensors
-COPY ./models/granite-8b/model-00003-of-00004.safetensors ./model-00003-of-00004.safetensors
-COPY ./models/granite-8b/model-00003-of-00004.safetensors ./model-00003-of-00004.safetensors
-COPY ./models/granite-8b/model.safetensors.index.json ./model.safetensors.index.json
-COPY ./models/granite-8b/README.md ./README.md
-COPY ./models/granite-8b/special_tokens_map.json ./special_tokens_map.json
-COPY ./models/granite-8b/tokenizer_config.json ./tokenizer_config.json
-COPY ./models/granite-8b/tokenizer.json ./tokenizer.json
+RUN huggingface-cli download --cache-dir ./ --local-dir-use-symlinks False --revision main --local-dir models/granite-8b ibm-granite/granite-8b-code-base-128k
 RUN git clone https://github.com/IBM/fmwork.git
 
 # Example experiment
