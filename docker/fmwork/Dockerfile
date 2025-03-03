@@ -29,7 +29,7 @@ RUN python3 -m pip install --break-system-packages vllm && \
     python3 -m pip install --break-system-packages huggingface-hub && \
     huggingface-cli download --cache-dir ./ --local-dir-use-symlinks False --revision main --local-dir models/granite-8b ibm-granite/granite-8b-code-base-128k
 
-RUN  git clone git@github.com:IBM/fmwork.git
+RUN git clone https://github.com/IBM/fmwork.git
 
 # Example experiment
 # ./fmwork/infer/vllm/driver --model_path models/granite-8b --input_size 1024 --output_size 1024 --batch_size 1,2,4 --tensor_parallel 1
