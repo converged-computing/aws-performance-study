@@ -1,0 +1,24 @@
+apiVersion: flux-framework.org/v1alpha2
+kind: MiniCluster
+metadata:
+  name: flux-sample
+spec:
+  size: 1
+  interactive: true
+  containers:
+  - image: ghcr.io/huggingface/gpu-fryer:latest
+    commands:
+      pre: |
+        ln -s /usr/local/nvidia/lib64/libnvidia-ml.so.1 /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1
+        sleep infinity
+        echo "Regenerated resources"
+        flux R encode --hosts=flux-sample-0 --cores=0-3 --gpu=0-1 > ${viewroot}/etc/flux/system/R
+        cat ${viewroot}/etc/flux/system/R
+        export CUDA_VISIBLE_DEVICES=0,1
+    volumes:
+      shared-memory:
+        emptyDir: true
+        emptyDirMedium: "memory"
+    resources:
+      limits:
+        nvidia.com/gpu: "2"

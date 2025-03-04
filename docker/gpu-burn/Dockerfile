@@ -21,12 +21,13 @@ RUN apt-get update && \
         luarocks \
         python3-dev \
         python3-pip \
+        libjansson-dev \
         jq && \
     rm -rf /var/lib/apt/lists/*
 
 # This mimics the logic from https://github.com/wilicc/gpu-burn/blob/master/Dockerfile
 RUN git clone https://github.com/wilicc/gpu-burn /build && \
-    cd /build && make
+    cd /build && make COMPUTE=70 CUDA_VERSION=12.8.0 IMAGE_DISTRO=ubuntu
 
 # Install oras for saving artifacts
 RUN export VERSION="1.1.0" && \
@@ -36,12 +37,7 @@ RUN export VERSION="1.1.0" && \
     mv oras-install/oras /usr/local/bin/ && \
     rm -rf oras_${VERSION}_*.tar.gz oras-install/
 
-FROM nvidia/cuda:12.8.0-cudnn-runtime-ubuntu24.04
-COPY --from=builder /build/gpu_burn /app/
-COPY --from=builder /build/compare.ptx /app/
-COPY --from=builder /usr/local/bin/oras /usr/local/bin/oras
-
-WORKDIR /app
+WORKDIR /build
 
 CMD ["./gpu_burn", "60"]
 

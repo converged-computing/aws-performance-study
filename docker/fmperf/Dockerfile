@@ -4,6 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Build command
 #  docker build -t ghcr.io/converged-computing/metric-fmperf:gpu .
 #  docker push ghcr.io/converged-computing/metric-fmperf:gpu
+# python -m fmperf.loadgen.generate-input
 
 # Utilities
 RUN apt-get update && \
@@ -40,10 +41,16 @@ RUN git clone https://github.com/IBM/text-generation-inference.git && \
     cd integration_tests && \
     ln -s $(which python3) /usr/bin/python && \
     # We can't run make gen-client - newer python pip needs --break-system-packages
-    python3 -m pip install . --no-cache-dir --break-system-packages
+    pip install --break-system-packages grpcio-tools==1.62.2 mypy-protobuf==3.5.0 'types-protobuf>=3.20.4' --no-cache-dir && \
+    mkdir -p text_generation_tests/pb && \
+    python -m grpc_tools.protoc -I../proto --python_out=text_generation_tests/pb --grpc_python_out=text_generation_tests/pb --mypy_out=text_generation_tests/pb ../proto/generation.proto && \
+    find text_generation_tests/pb/ -type f -name "*.py" -print0 -exec sed -i -e 's/^\(import.*pb2\)/from . \1/g' {} \; && \
+    touch text_generation_tests/pb/__init__.py && \
+    python3 -m pip install  . --no-cache-dir --break-system-packages
 
 RUN cd /fmperf && \
     python3 setup.py bdist_wheel && python3 -m pip install --break-system-packages --no-cache-dir ./dist/*.whl
+COPY ./environment.sh ./
 
 # Install oras for saving artifacts
 RUN export VERSION="1.1.0" && \
@@ -52,3 +59,5 @@ RUN export VERSION="1.1.0" && \
     tar -zxf oras_${VERSION}_*.tar.gz -C oras-install/ && \
     mv oras-install/oras /usr/local/bin/ && \
     rm -rf oras_${VERSION}_*.tar.gz oras-install/
+    
+WORKDIR /requests
