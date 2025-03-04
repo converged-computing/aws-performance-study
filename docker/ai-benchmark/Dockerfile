@@ -27,7 +27,8 @@ RUN apt-get update && \
 
 # Note that tensorflow-gpu has been removed
 RUN python3 -m pip install --break-system-packages tensorflow && \
-    python3 -m pip install --break-system-packages git+https://github.com/cloudmercato/ai-benchmark
+    python3 -m pip install --break-system-packages git+https://github.com/cloudmercato/ai-benchmark && \
+    sed -i "s/    LSTM_SENTIMENT/    #LSTM_SENTIMENT/g" /usr/local/lib/python3.12/dist-packages/ai_benchmark/config.py
 
 # Install oras for saving artifacts
 RUN export VERSION="1.1.0" && \

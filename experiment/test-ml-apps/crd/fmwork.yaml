@@ -1,0 +1,22 @@
+apiVersion: flux-framework.org/v1alpha2
+kind: MiniCluster
+metadata:
+  name: flux-sample
+spec:
+  size: 2
+  interactive: true
+  containers:
+  - image: ghcr.io/converged-computing/metric-fmwork:gpu
+    commands:
+      pre: |
+        echo "Regenerated resources"
+        flux R encode --hosts=flux-sample-[0-1] --cores=0-3 --gpu=0 > ${viewroot}/etc/flux/system/R
+        cat ${viewroot}/etc/flux/system/R
+        export CUDA_VISIBLE_DEVICES=0
+    volumes:
+      shared-memory:
+        emptyDir: true
+        emptyDirMedium: "memory"
+    resources:
+      limits:
+        nvidia.com/gpu: "1"
