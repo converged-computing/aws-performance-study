@@ -434,7 +434,7 @@ kubectl apply -f ./crd/fmwork.yaml
 
 ### GPU Fryer
 
-This seems to work, but we don't need flux. We should verify one pod per node and remove flux. This could be run as an indexed job or similar.
+This seems to work, but we don't need flux. We should verify one pod per node and remove flux. This could be run as an indexed job or similar. Note that it is only intended for [single nodes](https://github.com/huggingface/gpu-fryer/issues/3#issuecomment-2697899126).
 
 ```bash
 root@flux-sample-0:/# gpu-fryer 120
