@@ -1,0 +1,229 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: nfd-cluster
+  region: us-east-1
+
+availabilityZones: ["us-east-1a", "us-east-1b", "us-east-1c"]
+managedNodeGroups:
+
+  - name: ng-c7a-large
+    availabilityZones: ["us-east-1b"]
+    instanceType: c7a.large
+    volumeSize: 20
+    volumeType: gp2
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+
+  - name: ng-hpc7g-16xlarge
+    availabilityZones: ["us-east-1a"]
+    instanceType: hpc7g.16xlarge
+    volumeSize: 20
+    volumeType: gp2
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+
+  - name: ng-c6in-4xlarge
+    availabilityZones: ["us-east-1b"]
+    instanceType: c6in.4xlarge
+    volumeSize: 20
+    volumeType: gp2
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+
+  - name: ng-r7iz-large
+    availabilityZones: ["us-east-1b"]
+    instanceType: r7iz.large
+    volumeSize: 20
+    volumeType: gp2
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+
+  - name: ng-m6g-large
+    availabilityZones: ["us-east-1b"]
+    instanceType: m6g.large
+    volumeSize: 20
+    volumeType: gp2
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+      
+  - name: ng-t3a-medium
+    instanceType: t3a.medium
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+    volumeSize: 20
+    volumeType: gp2
+
+  - name: ng-t3-medium
+    instanceType: t3.medium
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+    volumeSize: 20
+    volumeType: gp2
+
+  # Intel General Purpose with Local NVMe
+  - name: ng-m6id-large
+    instanceType: m6id.large
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+    volumeSize: 20
+    volumeType: gp2
+
+  # Intel Compute Optimized with Local NVMe
+  - name: ng-c6id-large
+    instanceType: c6id.large
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+    volumeSize: 20
+    volumeType: gp2
+
+  # AWS Inferentia2 - ML Inference
+  # ARM-based, purpose-built for deep learning inference. Adds a specialized ML instance.
+  # Requires specific Neuron SDK and compiled models.
+  - name: ng-inf2-xlarge
+    instanceType: inf2.xlarge
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+    volumeSize: 20
+    volumeType: gp2
+
+  # ARM
+  - name: ng-t4g-medium
+    instanceType: t4g.medium
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+    volumeSize: 20
+    volumeType: gp2
+
+  # --- General Purpose - Standard ---
+  - name: ng-m6i-large
+    instanceType: m6i.large
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+    volumeSize: 30
+    volumeType: gp2
+
+  - name: ng-m6a-large
+    instanceType: m6a.large
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+    volumeSize: 30
+    volumeType: gp2
+
+  - name: ng-m7g-large
+    instanceType: m7g.large # ARM instance
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+    volumeSize: 30
+    volumeType: gp2
+
+    # --- Compute Optimized ---
+  - name: ng-c6i-large
+    instanceType: c6i.large
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+    volumeSize: 30
+    volumeType: gp2
+
+  - name: ng-c6a-large
+    instanceType: c6a.large
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+    volumeSize: 30
+    volumeType: gp2
+
+  - name: ng-c7g-large
+    instanceType: c7g.large # ARM instance
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+    volumeSize: 30
+    volumeType: gp2
+
+  # --- Memory Optimized ---
+  - name: ng-r6i-large
+    instanceType: r6i.large
+    amiFamily: AmazonLinux2
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+    volumeSize: 30
+    volumeType: gp2
+
+  - name: ng-r6a-large
+    instanceType: r6a.large
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+    volumeSize: 30
+    volumeType: gp2
+
+  - name: ng-r7g-large
+    instanceType: r7g.large # ARM instance
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+    volumeSize: 30
+    volumeType: gp2
+
+  # --- Storage Optimized ---
+  - name: ng-i4i-large
+    instanceType: i4i.large
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+    volumeSize: 30 # Root volume, actual NVMe is instance store
+    volumeType: gp2
+
+  # --- Accelerated Computing (GPU) ---
+  - name: ng-g4dn-xlarge
+    instanceType: g4dn.xlarge
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+    volumeSize: 50
+    volumeType: gp2
+
+  # NVIDIA A10G GPU - Newer Gen GPU
+  - name: ng-g5-xlarge
+    instanceType: g5.xlarge
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+    volumeSize: 50
+    volumeType: gp2
+
+  - name: ng-g4dn-xlarge-gpu-bottlerocket
+    instanceType: g4dn.xlarge
+    amiFamily: Bottlerocket
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+    volumeSize: 50
+    volumeType: gp2
+
+  # --- Dense Storage (HDD) ---
+  - name: ng-d3-xlarge
+    instanceType: d3.xlarge
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+    volumeSize: 30 # Root volume, actual HDDs are instance store
+    volumeType: gp2
