@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>💫 Node Explorer - Galactic Edition</title>
+      <!-- Include Tailwind CSS via CDN -->
+      <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+      <!-- Include Inter Font via CDN -->
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap" rel="stylesheet">
+      <!-- Include Chart.js via CDN -->
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+      <style>
+         body {
+         font-family: 'Inter', sans-serif;
+         /* Optional: Add a subtle starry background or gradient */
+         /* background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+         background-size: 20px 20px; */
+         }
+         #chart-container, #cpu-feature-chart-container { height: 500px; } /* Ensure height for both */
+         /* Custom scrollbar for a more thematic feel (WebKit browsers) */
+         ::-webkit-scrollbar {
+         width: 8px;
+         height: 8px;
+         }
+         ::-webkit-scrollbar-track {
+         background: #1e293b; /* slate-800 */
+         }
+         ::-webkit-scrollbar-thumb {
+         background: #38bdf8; /* sky-400 */
+         border-radius: 4px;
+         }
+         ::-webkit-scrollbar-thumb:hover {
+         background: #0ea5e9; /* sky-500 */
+         }
+      </style>
+   </head>
+   <body class="bg-slate-900 text-slate-200">
+      <div class="container mx-auto px-4 py-6">
+         <h1 class="text-4xl font-bold mb-8 text-center text-sky-400 tracking-wider">💫 Galactic Node Explorer</h1>
+         <!-- File Upload Section -->
+         <div class="bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-2xl shadow-sky-900/50 mb-6 border border-slate-700">
+            <label for="file-upload" class="block text-sm font-medium text-sky-300">Upload Node Data (JSON)</label>
+            <input type="file" id="file-upload" accept=".json" class="mt-1 block w-full text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-md file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-500 file:border-0 focus:outline-none focus:ring-2 focus:ring-sky-500">
+            <p id="file-info" class="mt-2 text-sm text-slate-400">Provide a 'node-features.json' file in the same directory, or use the upload button.</p>
+         </div>
+         <!-- Filters Section -->
+         <div class="bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-2xl shadow-sky-900/50 mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 border border-slate-700">
+            <div>
+               <label for="filter-instance-type" class="block text-sm font-medium text-sky-300">Instance Type</label>
+               <select id="filter-instance-type" class="mt-1 block w-full border border-slate-600 bg-slate-700 text-slate-200 rounded-md shadow-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+                  <option value="">All</option>
+               </select>
+            </div>
+            <div>
+               <label for="filter-region" class="block text-sm font-medium text-sky-300">Region</label>
+               <select id="filter-region" class="mt-1 block w-full border border-slate-600 bg-slate-700 text-slate-200 rounded-md shadow-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+                  <option value="">All</option>
+               </select>
+            </div>
+            <div>
+               <label for="filter-zone" class="block text-sm font-medium text-sky-300">Zone</label>
+               <select id="filter-zone" class="mt-1 block w-full border border-slate-600 bg-slate-700 text-slate-200 rounded-md shadow-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+                  <option value="">All</option>
+               </select>
+            </div>
+            <div>
+               <label for="filter-arch" class="block text-sm font-medium text-sky-300">Architecture</label>
+               <select id="filter-arch" class="mt-1 block w-full border border-slate-600 bg-slate-700 text-slate-200 rounded-md shadow-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+                  <option value="">All</option>
+               </select>
+            </div>
+            <div>
+               <!-- New Vendor ID Filter -->
+               <label for="filter-vendor-id" class="block text-sm font-medium text-sky-300">CPU Vendor</label>
+               <select id="filter-vendor-id" class="mt-1 block w-full border border-slate-600 bg-slate-700 text-slate-200 rounded-md shadow-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+                  <option value="">All</option>
+                  <!-- Options will be populated dynamically by JS -->
+               </select>
+            </div>
+         </div>
+         <!-- Summary Statistics Section -->
+         <div class="bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-2xl shadow-sky-900/50 mb-6 border border-slate-700">
+            <h2 class="text-2xl font-semibold mb-4 text-sky-400">System Scan Summary</h2>
+            <div id="summary-stats" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+               <div class="bg-slate-700/50 p-4 rounded-md border border-sky-700">
+                  <p class="text-sm font-medium text-sky-300">Total Nodes Detected</p>
+                  <p id="total-nodes" class="text-3xl font-bold text-sky-400">0</p>
+               </div>
+               <div class="bg-slate-700/50 p-4 rounded-md border border-emerald-700">
+                  <p class="text-sm font-medium text-emerald-300">Unique Instance Types</p>
+                  <p id="unique-instance-types" class="text-3xl font-bold text-emerald-400">0</p>
+               </div>
+               <div class="bg-slate-700/50 p-4 rounded-md border border-amber-700">
+                  <p class="text-sm font-medium text-amber-300">Unique Regions</p>
+                  <p id="unique-regions" class="text-3xl font-bold text-amber-400">0</p>
+               </div>
+               <div class="bg-slate-700/50 p-4 rounded-md border border-rose-700">
+                  <p class="text-sm font-medium text-rose-300">Unique Zones</p>
+                  <p id="unique-zones" class="text-3xl font-bold text-rose-400">0</p>
+               </div>
+            </div>
+         </div>
+
+      <!-- CPU Feature Chart Section - MOVED HERE -->
+      <div class="bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-2xl shadow-sky-900/50 mb-6 border border-slate-700">
+          <h2 class="text-2xl font-semibold mb-4 text-sky-400">CPU Capabilities Distribution</h2>
+          <div id="cpu-feature-chart-container" class="relative">
+              <canvas id="cpu-feature-chart"></canvas>
+          </div>
+      </div> <!-- End of CPU Feature Chart Section -->
+    
+         <!-- Node Table Section -->
+         <div class="bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-2xl shadow-sky-900/50 border border-slate-700">
+            <h2 class="text-2xl font-semibold mb-4 text-sky-400">Node Manifest</h2>
+            <div class="overflow-x-auto">
+               <table id="node-table" class="min-w-full divide-y divide-slate-700">
+                  <thead class="bg-slate-700/50">
+                     <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-sky-300 uppercase tracking-wider">
+                           Select
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-sky-300 uppercase tracking-wider cursor-pointer" data-sort-key="kubernetes.io/hostname">
+                           Identifier
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-sky-300 uppercase tracking-wider cursor-pointer" data-sort-key="beta.kubernetes.io/instance-type">
+                           Class
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-sky-300 uppercase tracking-wider cursor-pointer" data-sort-key="beta.kubernetes.io/arch">
+                           Architecture
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-sky-300 uppercase tracking-wider cursor-pointer" data-sort-key="topology.kubernetes.io/region">
+                           Sector (Region)
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-sky-300 uppercase tracking-wider cursor-pointer" data-sort-key="topology.kubernetes.io/zone">
+                           Sub-Sector (Zone)
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-sky-300 uppercase tracking-wider cursor-pointer" data-sort-key="eks.amazonaws.com/nodegroup">
+                           Unit Group
+                        </th>
+                     </tr>
+                  </thead>
+                  <tbody id="node-table-body" class="divide-y divide-slate-700">
+                     <!-- Table rows will be populated dynamically by JS -->
+                  </tbody>
+               </table>
+            </div>
+         </div>
+         <!-- Comparison Section -->
+         <div id="comparison-section" class="mt-6 bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-2xl shadow-sky-900/50 border border-slate-700">
+            <h2 class="text-2xl font-semibold mb-4 text-sky-400">Comparative Analysis</h2>
+            <div id="comparison-nodes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+               <!-- Comparison cards will be populated dynamically by JS -->
+            </div>
+         </div>
+         <!-- Distribution Charts Section -->
+         <div id="charts-section" class="mt-6 bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-2xl shadow-sky-900/50 border border-slate-700">
+            <h2 class="text-2xl font-semibold mb-4 text-sky-400">Feature Distribution Matrix</h2>
+            <div class="mb-4">
+               <label for="chart-feature" class="block text-sm font-medium text-sky-300">Select Feature for Analysis</label>
+               <select id="chart-feature" class="mt-1 block w-full border border-slate-600 bg-slate-700 text-slate-200 rounded-md shadow-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
+               </select>
+            </div>
+            <div id="chart-container" class="relative">
+               <canvas id="distribution-chart"></canvas>
+            </div>
+         </div>
+      </div>
+      <script>
+         // --- Data Storage ---
+         let nodeData = [];
+         
+         // --- DOM Elements ---
+         const fileUploadInput = document.getElementById('file-upload');
+         const filterInstanceTypeSelect = document.getElementById('filter-instance-type');
+         const fileInfoParagraph = document.getElementById('file-info');
+         const filterRegionSelect = document.getElementById('filter-region');
+         const filterZoneSelect = document.getElementById('filter-zone');
+         const filterArchSelect = document.getElementById('filter-arch');
+         const nodeTableBody = document.getElementById('node-table-body');
+         const totalNodesSpan = document.getElementById('total-nodes');
+         const uniqueInstanceTypesSpan = document.getElementById('unique-instance-types');
+         const uniqueRegionsSpan = document.getElementById('unique-regions');
+         const uniqueZonesSpan = document.getElementById('unique-zones');
+         const comparisonNodesDiv = document.getElementById('comparison-nodes');
+         const chartFeatureSelect = document.getElementById('chart-feature');
+         const chartCanvas = document.getElementById('distribution-chart');
+         const cpuFeatureChartCanvas = document.getElementById('cpu-feature-chart');
+         const filterVendorIdSelect = document.getElementById('filter-vendor-id');
+         
+         // --- State Variables ---
+         let filteredNodes = [];
+         let selectedNodes = new Set();
+         let sortKey = null;
+         let sortDirection = 'asc';
+         let distributionChartInstance = null;
+         let cpuFeatureChartInstance = null;  
+         
+         // --- Chart.js Theming Defaults ---
+         Chart.defaults.color = '#cbd5e1'; // slate-300 for general chart text
+         Chart.defaults.borderColor = '#334155'; // slate-700 for grid lines
+         const CPU_FEATURE_PREFIX = "feature.node.kubernetes.io/cpu-cpuid.";
+         
+         // --- Helper Functions ---
+         function getUniqueValues(data, key) {
+             const values = new Set();
+             data.forEach(item => {
+                 const value = item[key];
+                 if (value !== undefined && value !== null) {
+                     values.add(value);
+                 } else if (item.hasOwnProperty(key)) {
+                     values.add('N/A (Unknown)');
+                 }
+             });
+             return Array.from(values).sort();
+         }
+         
+         function populateFilterSelect(selectElement, options) {
+             const currentValue = selectElement.value; // Preserve current selection
+             selectElement.innerHTML = '<option value="">All Systems</option>';
+             options.forEach(value => {
+                 const option = document.createElement('option');
+                 option.value = value;
+                 option.textContent = value;
+                 selectElement.appendChild(option);
+             });
+             if (options.includes(currentValue)) { // Re-apply selection if still valid
+                  selectElement.value = currentValue;
+             }
+         }
+         
+         function prettifyKeyName(key) {
+             let name = key.includes('/') ? key.split('/').pop() : key;
+             name = name.replace(/[\.\-]/g, ' '); 
+             name = name.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+             // Custom replacements for thematic names
+             const thematicMap = {
+                 'Hostname': 'Identifier',
+                 'Instance Type': 'Class',
+                 'Nodegroup': 'Unit Group',
+                 'Region': 'Sector (Region)',
+                 'Zone': 'Sub-Sector (Zone)',
+             };
+             return thematicMap[name] || name;
+         }
+         
+         function populateChartFeatureSelect(options) {
+             const currentValue = chartFeatureSelect.value; // Preserve selection
+             chartFeatureSelect.innerHTML = ''; 
+             if (options.length === 0) {
+                 const option = document.createElement('option');
+                 option.value = "";
+                 option.textContent = "No features available for analysis";
+                 chartFeatureSelect.appendChild(option);
+                 chartFeatureSelect.disabled = true;
+                 return;
+             }
+         
+             chartFeatureSelect.disabled = false;
+             options.forEach((value) => {
+                 const option = document.createElement('option');
+                 option.value = value;
+                 option.textContent = prettifyKeyName(value); // Use prettified name
+                 chartFeatureSelect.appendChild(option);
+             });
+         
+             const preferredDefaults = [
+                 'beta.kubernetes.io/instance-type', 'topology.kubernetes.io/region',
+                 'topology.kubernetes.io/zone', 'beta.kubernetes.io/arch',
+                 'eks.amazonaws.com/nodegroup'
+             ];
+             let setDefault = false;
+             if (options.includes(currentValue)) { // Try to re-select current value
+                 chartFeatureSelect.value = currentValue;
+                 setDefault = true;
+             } else { // Else try preferred defaults
+                 for (const pref of preferredDefaults) {
+                     if (options.includes(pref)) {
+                         chartFeatureSelect.value = pref;
+                         setDefault = true;
+                         break;
+                     }
+                 }
+             }
+             if (!setDefault && options.length > 0) { // Fallback
+                 chartFeatureSelect.value = options[0]; 
+             }
+         }
+         
+         function applyFilters() {
+             const instanceTypeFilter = filterInstanceTypeSelect.value;
+             const regionFilter = filterRegionSelect.value;
+             const zoneFilter = filterZoneSelect.value;
+             const archFilter = filterArchSelect.value;
+             const vendorIdFilter = filterVendorIdSelect.value; // <-- Get value from new filter
+         
+             filteredNodes = nodeData.filter(node => {
+                 let match = true;
+                 if (instanceTypeFilter && node['beta.kubernetes.io/instance-type'] !== instanceTypeFilter) match = false;
+                 if (regionFilter && node['topology.kubernetes.io/region'] !== regionFilter) match = false;
+                 if (zoneFilter && node['topology.kubernetes.io/zone'] !== zoneFilter) match = false;
+                 if (archFilter && node['beta.kubernetes.io/arch'] !== archFilter) match = false;
+                 if (vendorIdFilter && node["feature.node.kubernetes.io/cpu-model.vendor_id"] !== vendorIdFilter) match = false; // <-- Add filter condition
+                 return match;
+             });
+         
+             updateSummaryStats(filteredNodes);
+             renderTable(filteredNodes);
+             renderChart();
+             renderCpuFeatureChart();
+         }
+         
+         function updateSummaryStats(data) {
+             totalNodesSpan.textContent = data.length;
+             uniqueInstanceTypesSpan.textContent = getUniqueValues(data, 'beta.kubernetes.io/instance-type').length;
+             uniqueRegionsSpan.textContent = getUniqueValues(data, 'topology.kubernetes.io/region').length;
+             uniqueZonesSpan.textContent = getUniqueValues(data, 'topology.kubernetes.io/zone').length;
+         }
+         
+         function renderTable(data) {
+             nodeTableBody.innerHTML = '';
+             if (data.length === 0) {
+                 const row = nodeTableBody.insertRow();
+                 const cell = row.insertCell();
+                 cell.colSpan = 7;
+                 cell.className = 'px-6 py-10 text-center text-slate-500 text-lg';
+                 cell.textContent = 'No galactic nodes match current scan parameters.';
+                 return;
+             }
+         
+             const sortedData = [...data];
+             if (sortKey) {
+                 sortedData.sort((a, b) => {
+                     const valueA = a[sortKey] || ''; const valueB = b[sortKey] || '';
+                     if (valueA < valueB) return sortDirection === 'asc' ? -1 : 1;
+                     if (valueA > valueB) return sortDirection === 'asc' ? 1 : -1;
+                     return 0;
+                 });
+             }
+         
+             sortedData.forEach(node => {
+                 const row = nodeTableBody.insertRow();
+                 row.className = 'even:bg-slate-800/60 hover:bg-sky-900/50 transition-colors duration-150';
+         
+                 const selectCell = row.insertCell();
+                 selectCell.className = 'px-6 py-4';
+                 const checkbox = document.createElement('input');
+                 checkbox.type = 'checkbox';
+                 checkbox.value = node['kubernetes.io/hostname'];
+                 checkbox.className = 'form-checkbox h-5 w-5 text-sky-500 bg-slate-700 border-slate-600 rounded focus:ring-sky-600 focus:ring-offset-slate-800';
+                 checkbox.checked = selectedNodes.has(node['kubernetes.io/hostname']);
+                 checkbox.addEventListener('change', (event) => {
+                     if (event.target.checked) selectedNodes.add(node['kubernetes.io/hostname']);
+                     else selectedNodes.delete(node['kubernetes.io/hostname']);
+                     renderComparison();
+                 });
+                 selectCell.appendChild(checkbox);
+         
+                 const displayKeys = [
+                     'kubernetes.io/hostname', 'beta.kubernetes.io/instance-type',
+                     'beta.kubernetes.io/arch', 'topology.kubernetes.io/region',
+                     'topology.kubernetes.io/zone', 'eks.amazonaws.com/nodegroup'
+                 ];
+                 displayKeys.forEach(key => {
+                     const cell = row.insertCell();
+                     cell.className = 'px-6 py-4 text-sm whitespace-nowrap text-slate-300';
+                     cell.textContent = node[key] || 'N/A';
+                 });
+             });
+         }
+         
+         // (This function is entirely new)
+         function renderCpuFeatureChart() {
+         const chartContainer = document.getElementById('cpu-feature-chart-container');
+         let messageEl = chartContainer.querySelector('.chart-message-cpu'); // Unique class for message
+         if (!messageEl) {
+         messageEl = document.createElement('p');
+         messageEl.className = 'chart-message-cpu absolute inset-0 flex items-center justify-center text-slate-500 text-center py-10 pointer-events-none';
+         chartContainer.insertBefore(messageEl, cpuFeatureChartCanvas);
+         }
+         
+         const cpuFeatureCounts = {}; // { featureName: { trueCount: 0, falseCount: 0, missingCount: 0 } }
+         const allDiscoveredCpuFeatureNames = new Set();
+         
+         if (filteredNodes.length === 0) {
+         if (cpuFeatureChartInstance) { cpuFeatureChartInstance.destroy(); cpuFeatureChartInstance = null; }
+         cpuFeatureChartCanvas.style.display = 'none';
+         messageEl.textContent = "No data loaded for CPU capabilities analysis.";
+         messageEl.style.display = 'flex'; return;
+         }
+         
+         filteredNodes.forEach(node => {
+         Object.keys(node).forEach(key => {
+             if (key.startsWith(CPU_FEATURE_PREFIX)) {
+                 allDiscoveredCpuFeatureNames.add(key.substring(CPU_FEATURE_PREFIX.length));
+             }
+         });
+         });
+         
+         allDiscoveredCpuFeatureNames.forEach(name => {
+         cpuFeatureCounts[name] = { trueCount: 0, falseCount: 0, missingCount: 0 };
+         });
+         
+         filteredNodes.forEach(node => {
+         allDiscoveredCpuFeatureNames.forEach(featureName => {
+             const fullFeatureKey = CPU_FEATURE_PREFIX + featureName;
+             if (node.hasOwnProperty(fullFeatureKey)) {
+                 const value = node[fullFeatureKey];
+                 if (value === true || String(value).toLowerCase() === 'true') {
+                     cpuFeatureCounts[featureName].trueCount++;
+                 } else if (value === false || String(value).toLowerCase() === 'false') {
+                     cpuFeatureCounts[featureName].falseCount++;
+                 }
+                 // If key exists but value is not strictly true/false, it's not counted in these categories for this chart
+             } else {
+                 cpuFeatureCounts[featureName].missingCount++;
+             }
+         });
+         });
+         
+         const sortedFeatureNames = Array.from(allDiscoveredCpuFeatureNames).sort();
+         
+         if (sortedFeatureNames.length === 0) {
+         if (cpuFeatureChartInstance) { cpuFeatureChartInstance.destroy(); cpuFeatureChartInstance = null; }
+         cpuFeatureChartCanvas.style.display = 'none';
+         messageEl.textContent = `No CPU capabilities (features starting with '${CPU_FEATURE_PREFIX}') found in filtered nodes.`;
+         messageEl.style.display = 'flex'; return;
+         }
+         
+         messageEl.style.display = 'none';
+         cpuFeatureChartCanvas.style.display = 'block';
+         
+         const trueData = sortedFeatureNames.map(name => cpuFeatureCounts[name].trueCount);
+         const falseData = sortedFeatureNames.map(name => cpuFeatureCounts[name].falseCount);
+         const missingData = sortedFeatureNames.map(name => cpuFeatureCounts[name].missingCount);
+         
+         if (cpuFeatureChartInstance) cpuFeatureChartInstance.destroy();
+         
+         const ctx = cpuFeatureChartCanvas.getContext('2d');
+         cpuFeatureChartInstance = new Chart(ctx, {
+         type: 'bar',
+         data: {
+             labels: sortedFeatureNames,
+             datasets: [
+                 {
+                     label: 'Enabled (True)', data: trueData,
+                     backgroundColor: 'rgba(34, 197, 94, 0.7)', // Green-500
+                     borderColor: 'rgba(22, 163, 74, 1)',     // Green-600
+                     borderWidth: 1
+                 },
+                 {
+                     label: 'Disabled (False)', data: falseData,
+                     backgroundColor: 'rgba(239, 68, 68, 0.7)', // Red-500
+                     borderColor: 'rgba(220, 38, 38, 1)',      // Red-600
+                     borderWidth: 1
+                 },
+                 {
+                     label: 'Not Reported (Key Missing)', data: missingData,
+                     backgroundColor: 'rgba(100, 116, 139, 0.7)', // Slate-500
+                     borderColor: 'rgba(71, 85, 105, 1)',        // Slate-600
+                     borderWidth: 1
+                 }
+             ]
+         },
+         options: {
+             responsive: true, maintainAspectRatio: false,
+             indexAxis: 'x', 
+             scales: {
+                 x: {
+                     grid: { display: false },
+                     ticks: { color: Chart.defaults.color, autoSkip: false, maxRotation: 65, minRotation: 45 }
+                 },
+                 y: {
+                     beginAtZero: true, stacked: false,
+                     grid: { color: Chart.defaults.borderColor, drawBorder: false },
+                     ticks: { color: Chart.defaults.color, precision: 0 },
+                     title: { display: true, text: 'Number of Nodes', color: Chart.defaults.color }
+                 }
+             },
+             plugins: {
+                 title: { display: true, text: 'CPU Capability Support Across Filtered Nodes', color: '#7dd3fc', font: {size: 16} },
+                 legend: { position: 'top', labels: { color: Chart.defaults.color } },
+                 tooltip: { mode: 'index', intersect: false, 
+                     callbacks: { title: (tooltipItems) => tooltipItems.length > 0 ? "CPU Feature: " + tooltipItems[0].label : '' }
+                 }
+             }
+         }
+         });
+         }
+         
+         function renderComparison() {
+             comparisonNodesDiv.innerHTML = '';
+             if (selectedNodes.size === 0) {
+                 comparisonNodesDiv.innerHTML = '<p class="text-slate-400 text-center py-4">Select nodes from the manifest for detailed comparative analysis.</p>';
+                 return;
+             }
+             const selectedNodeData = nodeData.filter(node => selectedNodes.has(node['kubernetes.io/hostname']));
+         
+             selectedNodeData.forEach(node => {
+                 const card = document.createElement('div');
+                 card.className = 'border border-slate-700 bg-slate-800/70 rounded-lg p-4 shadow-lg shadow-sky-900/30';
+                 const title = document.createElement('h3');
+                 title.className = 'text-lg font-semibold mb-3 text-sky-400 truncate';
+                 title.textContent = node['kubernetes.io/hostname'];
+                 card.appendChild(title);
+         
+                 const dl = document.createElement('dl');
+                 dl.className = 'grid grid-cols-1 gap-x-4 gap-y-2 text-sm max-h-96 overflow-y-auto'; // Added scroll for many keys
+                 Object.keys(node).sort().forEach(key => {
+                     const dt = document.createElement('dt');
+                     dt.className = 'font-medium text-sky-300/80 truncate';
+                     dt.textContent = prettifyKeyName(key);
+                     dt.title = key;
+                     const dd = document.createElement('dd');
+                     dd.className = 'text-slate-300 col-span-1 break-words';
+                     let value = node[key];
+                     if (typeof value === 'object' && value !== null) {
+                         dd.textContent = JSON.stringify(value);
+                     } else {
+                         dd.textContent = value !== null && value !== undefined ? String(value) : 'N/A';
+                     }
+                     dl.appendChild(dt); dl.appendChild(dd);
+                 });
+                 card.appendChild(dl);
+                 comparisonNodesDiv.appendChild(card);
+             });
+         }
+         
+         function handleSortClick(event) {
+             const clickedTh = event.target.closest('th[data-sort-key]');
+             if (!clickedTh) return;
+             const newSortKey = clickedTh.dataset.sortKey;
+             document.querySelectorAll('th[data-sort-key]').forEach(th => {
+                 const baseText = prettifyKeyName(th.dataset.sortKey); // Use prettified name
+                 if (th.dataset.sortKey === newSortKey) {
+                     if (sortKey === newSortKey) {
+                         sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                     } else {
+                         sortKey = newSortKey; sortDirection = 'asc';
+                     }
+                     th.innerHTML = `${baseText} <span class="text-sky-400">${sortDirection === 'asc' ? '▲' : '▼'}</span>`;
+                 } else {
+                     th.textContent = baseText;
+                 }
+             });
+             renderTable(filteredNodes);
+         }
+         
+         function initializeTableHeaders() {
+             document.querySelectorAll('th[data-sort-key]').forEach(th => {
+                 th.textContent = prettifyKeyName(th.dataset.sortKey); // Use prettified name
+             });
+         }
+         
+         function renderChart() {
+             const featureKey = chartFeatureSelect.value;
+             const chartContainer = document.getElementById('chart-container');
+             let messageEl = chartContainer.querySelector('.chart-message');
+         
+             if (!messageEl) {
+                 messageEl = document.createElement('p');
+                 messageEl.className = 'chart-message absolute inset-0 flex items-center justify-center text-slate-500 text-center py-10 pointer-events-none';
+                 chartContainer.insertBefore(messageEl, chartCanvas);
+             }
+             
+             if (!featureKey || chartFeatureSelect.disabled) {
+                 if (distributionChartInstance) {
+                     distributionChartInstance.destroy();
+                     distributionChartInstance = null;
+                 }
+                 chartCanvas.style.display = 'none';
+                 messageEl.textContent = chartFeatureSelect.disabled ? "Load system data to visualize matrix." : "Select feature for distribution analysis.";
+                 messageEl.style.display = 'flex';
+                 return;
+             }
+             
+             messageEl.style.display = 'none';
+             chartCanvas.style.display = 'block';
+         
+             const counts = {};
+             filteredNodes.forEach(node => {
+                 let value = node[featureKey];
+                 if (value === undefined || value === null) value = 'N/A (Unknown)';
+                 else if (typeof value === 'object') value = '[Complex Data Structure]';
+                 else value = String(value);
+                 counts[value] = (counts[value] || 0) + 1;
+             });
+         
+             const labels = Object.keys(counts).sort();
+             const data = labels.map(label => counts[label]);
+         
+             if (distributionChartInstance) distributionChartInstance.destroy();
+         
+             const ctx = chartCanvas.getContext('2d');
+             distributionChartInstance = new Chart(ctx, {
+                 type: 'bar',
+                 data: {
+                     labels: labels,
+                     datasets: [{
+                         label: 'Node Count',
+                         data: data,
+                         backgroundColor: 'rgba(56, 189, 248, 0.6)', // sky-400 with alpha
+                         borderColor: 'rgba(14, 165, 233, 1)',   // sky-500
+                         borderWidth: 1,
+                         hoverBackgroundColor: 'rgba(14, 165, 233, 0.8)', // sky-500 with alpha
+                         hoverBorderColor: 'rgba(14, 165, 233, 1)',      // sky-500
+                     }]
+                 },
+                 options: {
+                     responsive: true, maintainAspectRatio: false,
+                     scales: {
+                         y: {
+                             beginAtZero: true,
+                             grid: { color: Chart.defaults.borderColor, drawBorder: false },
+                             ticks: { color: Chart.defaults.color, precision: 0 }
+                         },
+                         x: {
+                             grid: { display: false, drawBorder: false }, // Cleaner look for x-axis
+                             ticks: { color: Chart.defaults.color, autoSkip: true, maxRotation: 30, minRotation: 0 }
+                         }
+                     },
+                     plugins: {
+                         title: { display: true, text: `Distribution of ${prettifyKeyName(featureKey)}`, color: '#7dd3fc', font: {size: 16} }, // sky-300
+                         legend: { display: false } // Hiding legend as it's usually one dataset
+                     }
+                 }
+             });
+         }
+         
+         async function processUploadedFile(file) {
+             fileInfoParagraph.textContent = `Processing uplink: ${file.name}...`;
+             try {
+                 const fileContents = await file.text();
+                 nodeData = JSON.parse(fileContents);
+                 fileInfoParagraph.textContent = `Uplink successful. ${nodeData.length} nodes registered from ${file.name}.`;
+                 initializeApplicationState();
+             } catch (error) {
+                 fileInfoParagraph.textContent = `Uplink failed for ${file.name}: ${error.message}. System integrity compromised.`;
+                 nodeData = [];
+                 initializeApplicationState();
+             }
+         }
+         
+         async function loadNodeDataFromServer(filePath) {
+             fileInfoParagraph.textContent = `Attempting to connect to Galactic Archive: ${filePath}...`;
+             try {
+                 const response = await fetch(filePath);
+                 if (!response.ok) throw new Error(`Connection unstable: ${response.status}`);
+                 nodeData = await response.json();
+                 fileInfoParagraph.textContent = `Archive connection successful. ${nodeData.length} nodes cataloged from ${filePath}.`;
+             } catch (error) {
+                 fileInfoParagraph.textContent = `Archive connection failed for ${filePath}: ${error.message}. Local scan mode active.`;
+                 nodeData = [];
+             }
+             initializeApplicationState();
+         }
+         
+         function initializeApplicationState() {
+             const VENDOR_ID_KEY = "feature.node.kubernetes.io/cpu-model.vendor_id" ;
+         
+             const instanceTypes = getUniqueValues(nodeData, 'beta.kubernetes.io/instance-type');
+         const regions = getUniqueValues(nodeData, 'topology.kubernetes.io/region');
+         const zones = getUniqueValues(nodeData, 'topology.kubernetes.io/zone');
+         const arches = getUniqueValues(nodeData, 'beta.kubernetes.io/arch');
+         const vendorIds = getUniqueValues(nodeData, VENDOR_ID_KEY); // <-- Extract unique vendor IDs
+         
+         populateFilterSelect(filterInstanceTypeSelect, instanceTypes);
+         populateFilterSelect(filterRegionSelect, regions);
+         populateFilterSelect(filterZoneSelect, zones);
+         populateFilterSelect(filterArchSelect, arches);
+         populateFilterSelect(filterVendorIdSelect, vendorIds); // <-- Populate new filter
+         
+         const allKeys = new Set();
+         nodeData.forEach(node => Object.keys(node).forEach(key => allKeys.add(key)));
+         const dynamicChartFeatures = Array.from(allKeys).sort();
+         populateChartFeatureSelect(dynamicChartFeatures);
+         
+         filteredNodes = [...nodeData];
+         selectedNodes.clear();
+         updateSummaryStats(filteredNodes);
+         renderTable(filteredNodes);
+         renderComparison();
+         renderChart();
+         renderCpuFeatureChart();
+         }
+         
+         document.addEventListener('DOMContentLoaded', () => {
+         initializeTableHeaders();
+         const dataFilePath = 'node-features.json';
+         loadNodeDataFromServer(dataFilePath);
+         
+         fileUploadInput.addEventListener('change', (event) => {
+             const file = event.target.files[0];
+             if (file) processUploadedFile(file);
+         });
+         
+         // Add the new filter to the list of event listeners
+         [filterInstanceTypeSelect, filterRegionSelect, filterZoneSelect, filterArchSelect, filterVendorIdSelect].forEach(sel => {
+             if (sel) sel.addEventListener('change', applyFilters); // Check if sel exists, good practice
+         });
+         document.querySelectorAll('th[data-sort-key]').forEach(th => th.addEventListener('click', handleSortClick));
+         chartFeatureSelect.addEventListener('change', renderChart);
+         
+         if (nodeData.length === 0) {
+              renderChart();
+              renderCpuFeatureChart();
+         }
+         });    
+      </script>
+   </body>
+</html>
