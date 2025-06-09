@@ -4,21 +4,14 @@
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>💫 Node Explorer - Galactic Edition</title>
-      <!-- Include Tailwind CSS via CDN -->
       <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
-      <!-- Include Inter Font via CDN -->
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap" rel="stylesheet">
-      <!-- Include Chart.js via CDN -->
       <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
       <style>
          body {
-         font-family: 'Inter', sans-serif;
-         /* Optional: Add a subtle starry background or gradient */
-         /* background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
-         background-size: 20px 20px; */
+           font-family: 'Inter', sans-serif;
          }
-         #chart-container, #cpu-feature-chart-container { height: 500px; } /* Ensure height for both */
-         /* Custom scrollbar for a more thematic feel (WebKit browsers) */
+         #chart-container, #cpu-feature-chart-container { height: 500px; }
          ::-webkit-scrollbar {
          width: 8px;
          height: 8px;
@@ -38,12 +31,14 @@
    <body class="bg-slate-900 text-slate-200">
       <div class="container mx-auto px-4 py-6">
          <h1 class="text-4xl font-bold mb-8 text-center text-sky-400 tracking-wider">💫 Galactic Node Explorer</h1>
+
          <!-- File Upload Section -->
          <div class="bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-2xl shadow-sky-900/50 mb-6 border border-slate-700">
             <label for="file-upload" class="block text-sm font-medium text-sky-300">Upload Node Data (JSON)</label>
             <input type="file" id="file-upload" accept=".json" class="mt-1 block w-full text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-md file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-500 file:border-0 focus:outline-none focus:ring-2 focus:ring-sky-500">
             <p id="file-info" class="mt-2 text-sm text-slate-400">Provide a 'node-features.json' file in the same directory, or use the upload button.</p>
          </div>
+
          <!-- Filters Section -->
          <div class="bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-2xl shadow-sky-900/50 mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 border border-slate-700">
             <div>
@@ -71,7 +66,6 @@
                </select>
             </div>
             <div>
-               <!-- New Vendor ID Filter -->
                <label for="filter-vendor-id" class="block text-sm font-medium text-sky-300">CPU Vendor</label>
                <select id="filter-vendor-id" class="mt-1 block w-full border border-slate-600 bg-slate-700 text-slate-200 rounded-md shadow-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 sm:text-sm">
                   <option value="">All</option>
@@ -79,6 +73,7 @@
                </select>
             </div>
          </div>
+
          <!-- Summary Statistics Section -->
          <div class="bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-2xl shadow-sky-900/50 mb-6 border border-slate-700">
             <h2 class="text-2xl font-semibold mb-4 text-sky-400">System Scan Summary</h2>
@@ -102,13 +97,13 @@
             </div>
          </div>
 
-      <!-- CPU Feature Chart Section - MOVED HERE -->
+      <!-- CPU Feature Chart Section -->
       <div class="bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-2xl shadow-sky-900/50 mb-6 border border-slate-700">
           <h2 class="text-2xl font-semibold mb-4 text-sky-400">CPU Capabilities Distribution</h2>
           <div id="cpu-feature-chart-container" class="relative">
               <canvas id="cpu-feature-chart"></canvas>
           </div>
-      </div> <!-- End of CPU Feature Chart Section -->
+      </div>
     
          <!-- Node Table Section -->
          <div class="bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-2xl shadow-sky-900/50 border border-slate-700">
@@ -146,6 +141,7 @@
                </table>
             </div>
          </div>
+
          <!-- Comparison Section -->
          <div id="comparison-section" class="mt-6 bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-2xl shadow-sky-900/50 border border-slate-700">
             <h2 class="text-2xl font-semibold mb-4 text-sky-400">Comparative Analysis</h2>
@@ -153,6 +149,7 @@
                <!-- Comparison cards will be populated dynamically by JS -->
             </div>
          </div>
+
          <!-- Distribution Charts Section -->
          <div id="charts-section" class="mt-6 bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-2xl shadow-sky-900/50 border border-slate-700">
             <h2 class="text-2xl font-semibold mb-4 text-sky-400">Feature Distribution Matrix</h2>
@@ -369,7 +366,6 @@
              });
          }
          
-         // (This function is entirely new)
          function renderCpuFeatureChart() {
          const chartContainer = document.getElementById('cpu-feature-chart-container');
          let messageEl = chartContainer.querySelector('.chart-message-cpu'); // Unique class for message
