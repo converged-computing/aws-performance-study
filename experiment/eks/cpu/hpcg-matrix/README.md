@@ -106,4 +106,5 @@ When you are done:
 ```bash
 eksctl delete cluster --config-file ./cfg/eks-config-t3-2xlarge.yaml --wait
 eksctl delete cluster --config-file ./cfg/eks-config-m6a.12xlarge.yaml
+eksctl delete cluster --config-file ./cfg/eks-config-m6i.12xlarge.yaml
 ```
