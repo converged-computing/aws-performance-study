@@ -72,6 +72,9 @@ def add_ebpf_result(indir, filename, io_counts):
     item = ps.read_file(filename)
     if "PROGRAM" not in item:
         return
+    hpcg_run = ps.read_file(os.path.join(os.path.dirname(filename), "hpcg.out"))
+    if "exited with exit code 132" in hpcg_run:
+        env_name = f"{env_name}-not-compatible"
 
     analysis = [x for x in item.split("\n") if "PROGRAM" in x][0].split(":")[-1].strip()
     if analysis not in total_counts:
@@ -148,13 +151,19 @@ def parse_cpu(item):
             command = model["comm"].split("/")[0]
 
             # Add the median for now
-            time_waiting_q = model["runq_latency_stats_ns"]["median_ns"] * model["runq_latency_stats_ns"]["count"]
+            time_waiting_q = (
+                model["runq_latency_stats_ns"]["median_ns"]
+                * model["runq_latency_stats_ns"]["count"]
+            )
             if time_waiting_q is not None:
                 yield "cpu_waiting_ns", time_waiting_q, command
             try:
-                 time_running = model["on_cpu_stats_ns"]["median_ns"] * model["on_cpu_stats_ns"]["count"]
+                time_running = (
+                    model["on_cpu_stats_ns"]["median_ns"]
+                    * model["on_cpu_stats_ns"]["count"]
+                )
             except:
-                 time_running = None
+                time_running = None
             if time_running is not None:
                 yield "cpu_running_ns", time_running, command
 
@@ -192,12 +201,14 @@ def parse_tcp(item):
                 meta = update_meta(meta)
                 bucket = meta["bucket"]
                 event = f"{meta['command']}-{meta['event'].lower()}"
-                yield f"duration_ns_{bucket}", model["p95"] * model['count'], event
+                yield f"duration_ns_{bucket}", model["p95"] * model["count"], event
             else:
                 meta = re.search(pattern, model_name).groupdict()
                 meta = update_meta(meta)
                 event = f"{meta['command']}-{meta['event'].lower()}"
-                yield "duration_ns", model["duration_stats"]["p95"] * model["duration_stats"]["count"], event
+                yield "duration_ns", model["duration_stats"]["p95"] * model[
+                    "duration_stats"
+                ]["count"], event
 
 
 def parse_io(item, experiment, exp, counts, filename):

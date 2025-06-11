@@ -81,17 +81,10 @@ def parse_flux_jobs(item):
     jobid = None
     lines = item.split("\n")
 
-    #print('FIND OUTPUT')
-    #import IPython
-    #IPython.embed()
-    #sys.exit()
-    # Output is cat at the end.
-    # start_idx = lines.index([x for x in lines if "FLUX-RUN END" in x][-1]) + 1
-    # end_idx = lines.index([x for x in lines if x.startswith("FLUX-JOB START")][0]) -1 
-    # results = lines[start_idx:end_idx]
+    # FOM for HPCG is the Gflop/s rate based on the apparent number of floating-point operations executed during the benchmark run.
+    # Get final results. IMPORTANT: there are more here we could plot
+    foms = [float(x.split("=")[-1]) for x in lines if "Final Summary::HPCG result" in x]
 
-    # FOM for HPCG is the Gflop/s rate based on the apparent number of floating-point operations executed during the benchmark run. 
-    
     # Get the results.
     while lines:
         line = lines.pop(0)
@@ -125,6 +118,7 @@ def parse_flux_jobs(item):
             jobs[study_id]["fluxid"] = jobid
             jobspec, lines = ps.find_section(lines, "FLUX-JOB-JOBSPEC")
             jobs[study_id]["jobspec"] = jobspec
+            jobs[study_id]["fom"] = foms.pop(0)
             resources, lines = ps.find_section(lines, "FLUX-JOB-RESOURCES")
             jobs[study_id]["resources"] = resources
             events, lines = ps.find_section(lines, "FLUX-JOB-EVENTLOG")
@@ -156,16 +150,18 @@ def add_hpcg_result(p, indir, filename, ebpf=None, gpu=False):
     exp.show()
 
     item = ps.read_file(filename)
+    if "exited with exit code 132" in item:
+        print(f"Study {filename} was not compatible")
+        p.add_result("compatible", False, env_name)
+        return p
+    p.add_result("compatible", True, env_name)
+
     jobs = parse_flux_jobs(item)
     for _, metadata in jobs.items():
         if not metadata:
             continue
-        #step, seconds = parse_matom_steps(metadata["log"])
-        #p.add_result(step, seconds, env_name)
-        #p.add_result("cpu-usage", cpu_use, env_name)
-        #p.add_result("wall-time", wall_time, env_name)
+        p.add_result("fom", metadata["fom"], env_name)
         p.add_result("duration", metadata["duration"], env_name)
-        # p.add_result("hookup-time", metadata["duration"] - wall_time, env_name)
     return p
 
 
@@ -195,7 +191,7 @@ def plot_results(df, outdir, non_anon=False):
     if not os.path.exists(img_outdir):
         os.makedirs(img_outdir)
 
-    df['optimization'] = [x.split('-')[-1] for x in df.problem_size.tolist()]
+    df["optimization"] = [x.split("-")[-1] for x in df.problem_size.tolist()]
 
     frames = {}
     # Make a plot for seconds runtime, and each FOM set.
@@ -206,39 +202,44 @@ def plot_results(df, outdir, non_anon=False):
 
     print(metric_df.problem_size.unique())
     for metric, data_frames in frames.items():
-        fig = plt.figure(figsize=(18, 5))
+        if metric == "compatible":
+            plot_compatible(data_frames["cpu"], img_outdir)
+            continue
+        hue = "optimization"
+        fig = plt.figure(figsize=(22, 5))
         axes = []
         gs = plt.GridSpec(1, 2, width_ratios=[7, 1])
         axes.append(fig.add_subplot(gs[0, 0]))
         axes.append(fig.add_subplot(gs[0, 1]))
 
-        data_sorted = data_frames["cpu"].sort_values(by='value', ascending=True)    
-        order = data_sorted.groupby('problem_size')['value'].mean().sort_values(ascending=True).index
+        data_sorted = data_frames["cpu"].sort_values(by="value", ascending=True)
+        order = (
+            data_sorted.groupby("problem_size")["value"]
+            .mean()
+            .sort_values(ascending=True)
+            .index
+        )
 
         sns.set_style("whitegrid")
-        sns.barplot(
+        func = sns.barplot
+        func(
             data_sorted,
             ax=axes[0],
             x="problem_size",
             y="value",
-            hue="optimization",
+            hue=hue,
             err_kws={"color": "darkred"},
             order=order,
         )
-        if metric in ["duration", "wall-time", "hookup-time"]:
+        if metric in ["duration"]:
             axes[0].set_title(f"HPCG (xhpcg) {metric.capitalize()}", fontsize=14)
             axes[0].set_ylabel("Seconds", fontsize=14)
-        elif "cpu" in metric:
-            axes[0].set_title("LAMMPS CPU Usage", fontsize=14)
-            axes[0].set_ylabel("% CPU usage", fontsize=14)
-        elif "katom" in metric:
-            axes[0].set_title("LAMMPS K/Atom Steps per Second", fontsize=14)
-            axes[0].set_ylabel("M/Atom Steps Per Second", fontsize=14)
-        else:
-            axes[0].set_title("LAMMPS M/Atom Steps per Second", fontsize=14)
-            axes[0].set_ylabel("M/Atom Steps Per Second", fontsize=14)
+        elif "fom" in metric:
+            axes[0].set_title("HPCG (xhpcg) Gflop/s", fontsize=14)
+            axes[0].set_ylabel("Gflop/second", fontsize=14)
         axes[0].set_xlabel("Micro-architecture and Optimization", fontsize=14)
-        axes[0].tick_params(axis='x', rotation=90)
+
+        axes[0].tick_params(axis="x", rotation=90)
 
         handles, labels = axes[0].get_legend_handles_labels()
         labels = ["/".join(x.split("/")[0:2]) for x in labels]
@@ -259,6 +260,44 @@ def plot_results(df, outdir, non_anon=False):
 
         # Print the total number of data points
         print(f'Total number of datum: {data_frames["cpu"].shape[0]}')
+
+
+def plot_compatible(df, img_outdir):
+    """
+    Plot compatibility matrix
+    """
+    optims = list(set([x.split("-")[-1] for x in df.problem_size.unique().tolist()]))
+    microarches = list(
+        set([x.rsplit("-", 1)[0] for x in df.problem_size.unique().tolist()])
+    )
+    microarches.sort()
+    optims.sort()
+    compat_df = pandas.DataFrame(0, columns=microarches, index=optims)
+
+    # Fill it in!
+    for idx, row in df.iterrows():
+        if row.value is True:
+            arch, optim = row.problem_size.rsplit("-", 1)
+            compat_df.loc[optim, arch] = 1
+
+    fig = plt.figure(figsize=(12, 8))
+    axes = []
+    gs = plt.GridSpec(1, 2, width_ratios=[7, 0])
+    axes.append(fig.add_subplot(gs[0, 0]))
+    sns.set_style("whitegrid")
+    g = sns.clustermap(
+        compat_df,
+        cmap="Blues",
+        cbar_pos=None,
+        annot=True,
+    )
+    g.fig.suptitle("HPCG (xhpcg) Compatibility")
+    plt.xlabel("Micro-architecture")
+    plt.ylabel("Optimization")
+    plt.tight_layout()
+    plt.savefig(os.path.join(img_outdir, f"xhpcg-optimization.svg"))
+    plt.savefig(os.path.join(img_outdir, f"xhpcg-optimization.png"))
+    plt.clf()
 
 
 if __name__ == "__main__":

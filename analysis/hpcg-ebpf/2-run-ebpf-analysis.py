@@ -204,7 +204,16 @@ def get_table_for_analysis(db, name):
 
     # Create a column that combines experiment and environment
     df["experiment"] = df["environment"]
+
+    df["optimization"] = [x.split("-")[-1] for x in df.experiment.tolist()]
+    df["compatible"] = [
+        False if "not-compatible" in x else True for x in df["experiment"].tolist()
+    ]
+    df["experiment"] = [
+        x.replace("-not-compatible", "") for x in df.experiment.tolist()
+    ]
     return df
+
 
 def plot_shmem(db, outdir):
     """
@@ -215,10 +224,10 @@ def plot_shmem(db, outdir):
     df = df[df.context == "lmp"]
 
     # Convert all nanoseconds to seconds.
-    df['microseconds'] = df.metric_value/  1000
-    df['seconds'] = df.metric_value/  1e9
+    df["microseconds"] = df.metric_value / 1000
+    df["seconds"] = df.metric_value / 1e9
 
-    img_outdir = os.path.join(outdir, 'img')
+    img_outdir = os.path.join(outdir, "img")
     for metric in df.metric_name.unique():
         fig = plt.figure(figsize=(10, 3.3))
         gs = plt.GridSpec(1, 2, width_ratios=[3, 1])
@@ -243,12 +252,12 @@ def plot_shmem(db, outdir):
         handles, labels = axes[0].get_legend_handles_labels()
         labels = ["/".join(x.split("/")[0:2]) for x in labels]
         axes[1].legend(
-                handles,
-                labels,
-                loc="center left",
-                bbox_to_anchor=(-0.1, 0.5),
-                frameon=False,
-            )
+            handles,
+            labels,
+            loc="center left",
+            bbox_to_anchor=(-0.1, 0.5),
+            frameon=False,
+        )
         for ax in axes[0:1]:
             if ax is not None:
                 ax.get_legend().remove()
@@ -257,6 +266,7 @@ def plot_shmem(db, outdir):
         plt.savefig(os.path.join(img_outdir, f"lammps-shmem-{metric}.png"))
         plt.savefig(os.path.join(img_outdir, f"lammps-shmem-{metric}.svg"))
         plt.clf()
+
 
 def plot_futex(db, outdir):
     """
@@ -267,16 +277,21 @@ def plot_futex(db, outdir):
     df = df[df.context == "xhpcg"]
 
     # Convert all nanoseconds to seconds.
-    df['microseconds'] = df.metric_value/  1000
-    df['optimization'] = [x.split('-')[-1] for x in df.experiment.tolist()]
-    img_outdir = os.path.join(outdir, 'img')
+    df["microseconds"] = df.metric_value / 1000
+    df["optimization"] = [x.split("-")[-1] for x in df.experiment.tolist()]
+    img_outdir = os.path.join(outdir, "img")
     fig = plt.figure(figsize=(17, 5))
     gs = plt.GridSpec(1, 2, width_ratios=[7, 1])
     axes = []
     axes.append(fig.add_subplot(gs[0, 0]))
     axes.append(fig.add_subplot(gs[0, 1]))
-    data_sorted = df.sort_values(by='microseconds', ascending=True)    
-    order = data_sorted.groupby('experiment')['microseconds'].mean().sort_values(ascending=True).index
+    data_sorted = df.sort_values(by="microseconds", ascending=True)
+    order = (
+        data_sorted.groupby("experiment")["microseconds"]
+        .mean()
+        .sort_values(ascending=True)
+        .index
+    )
     sns.set_style("whitegrid")
     sns.barplot(
         data_sorted,
@@ -290,15 +305,15 @@ def plot_futex(db, outdir):
     axes[0].set_title(f"HPCG (xhpcg) Cumulative Futex Wait Times", fontsize=12)
     axes[0].set_ylabel("Time (µs)", fontsize=12)
     axes[0].set_xlabel("Micro-architecture and Optimization", fontsize=14)
-    axes[0].tick_params(axis='x', rotation=90)
+    axes[0].tick_params(axis="x", rotation=90)
     handles, labels = axes[0].get_legend_handles_labels()
     axes[1].legend(
-                handles,
-                labels,
-                loc="center left",
-                bbox_to_anchor=(-0.1, 0.5),
-                frameon=False,
-            )
+        handles,
+        labels,
+        loc="center left",
+        bbox_to_anchor=(-0.1, 0.5),
+        frameon=False,
+    )
     axes[1].axis("off")
     axes[0].get_legend().remove()
     plt.tight_layout()
@@ -314,22 +329,32 @@ def plot_cpu(db, outdir):
     analysis = "cpu"
     df = get_table_for_analysis(db, analysis)
     df = df[df.context == "xhpcg"]
-    df['optimization'] = [x.split('-')[-1] for x in df.experiment.tolist()]
-    waiting = df[df.metric_name == 'cpu_waiting_ns']
-    running = df[df.metric_name == 'cpu_running_ns']
+    waiting = df[df.metric_name == "cpu_waiting_ns"]
+    running = df[df.metric_name == "cpu_running_ns"]
     print(df)
-    one = running.groupby(['environment', 'environment_type', 'optimization']).metric_value.median()
-    two = waiting.groupby(['environment', 'environment_type', 'optimization']).metric_value.median()
+    one = running.groupby(
+        ["environment", "environment_type", "compatible"]
+    ).metric_value.median()
+    two = waiting.groupby(
+        ["environment", "environment_type", "compatible"]
+    ).metric_value.median()
     # TODO it would be better if we don't take median and can show variation.
-    view = pandas.DataFrame(one/two)
-    view.loc[:, "experiment"] = [x[0] for x in view.index]
+    view = pandas.DataFrame(one / two)
+    view.loc[:, "experiment"] = [
+        x[0].replace("-not-compatible", "") for x in view.index
+    ]
     view.loc[:, "environment"] = [x[1] for x in view.index]
-    view.loc[:, "optimization"] = [x[2] for x in view.index]
-    data_sorted = view.sort_values(by='metric_value', ascending=True)  
-    order = data_sorted.groupby('experiment')['metric_value'].mean().sort_values(ascending=True).index
+    view.loc[:, "compatible"] = [x[2] for x in view.index]
+    data_sorted = view.sort_values(by="metric_value", ascending=True)
+    order = (
+        data_sorted.groupby("experiment")["metric_value"]
+        .mean()
+        .sort_values(ascending=True)
+        .index
+    )
 
     # These are all cpu
-    img_outdir = os.path.join(outdir, 'img')
+    img_outdir = os.path.join(outdir, "img")
     fig = plt.figure(figsize=(22, 5))
     gs = plt.GridSpec(1, 2, width_ratios=[9, 1])
     axes = []
@@ -341,22 +366,22 @@ def plot_cpu(db, outdir):
         ax=axes[0],
         x="experiment",
         y="metric_value",
-        hue="optimization",
+        hue="compatible",
         err_kws={"color": "darkred"},
-        order=order
+        order=order,
     )
     axes[0].set_title(f"HPCG (xhpcg) CPU Running/Waiting ratio", fontsize=12)
     axes[0].set_ylabel("Ratio", fontsize=14)
     axes[0].set_xlabel("Micro-architecture and Optimization", fontsize=14)
-    axes[0].tick_params(axis='x', rotation=90)
+    axes[0].tick_params(axis="x", rotation=90)
     handles, labels = axes[0].get_legend_handles_labels()
     axes[1].legend(
-                handles,
-                labels,
-                loc="center left",
-                bbox_to_anchor=(-0.1, 0.5),
-                frameon=False,
-            )
+        handles,
+        labels,
+        loc="center left",
+        bbox_to_anchor=(-0.1, 0.5),
+        frameon=False,
+    )
     axes[0].get_legend().remove()
     axes[1].axis("off")
     plt.tight_layout()
@@ -370,24 +395,28 @@ def plot_tcp(db, outdir):
     Look at tcp calls (and change) as we increase in size.
     """
     analysis = "tcp"
-    
+
     # We want to calculate each nanoseconds as a percentage of total time
     times_df = pandas.read_csv(os.path.join(outdir, "lammps-results.csv"), index_col=0)
-    
+
     # Get median time based on size and environment
     # We are only using the single samples for now
-    filter_names = ['Ubuntu Mpich eBPF Sample', 'Ubuntu OpenMPI eBPF Sample',
-       'Rocky OpenMPI eBPF Sample', 'Ubuntu OpenMPI eBPF GPU']
+    filter_names = [
+        "Ubuntu Mpich eBPF Sample",
+        "Ubuntu OpenMPI eBPF Sample",
+        "Rocky OpenMPI eBPF Sample",
+        "Ubuntu OpenMPI eBPF GPU",
+    ]
     times_df = times_df[times_df.problem_size.isin(filter_names)]
-    times_df = times_df[times_df.metric == 'duration']
-    lookup = times_df.groupby(['problem_size', 'nodes']).value.median().to_dict()
+    times_df = times_df[times_df.metric == "duration"]
+    lookup = times_df.groupby(["problem_size", "nodes"]).value.median().to_dict()
     df = get_table_for_analysis(db, analysis)
 
     # Get rid of mean bytes
-    df = df[df.metric_name != 'mean_bytes']
-    
+    df = df[df.metric_name != "mean_bytes"]
+
     # Convert all nanoseconds to seconds.
-    df['seconds'] = df.metric_value/  1e9
+    df["seconds"] = df.metric_value / 1e9
 
     res = []
     for command in df.context.unique():
@@ -396,31 +425,37 @@ def plot_tcp(db, outdir):
             if row.experiment == "Ubuntu Mpich-cpu":
                 key = "Ubuntu Mpich eBPF Sample"
             elif row.experiment == "Rocky OpenMPI-cpu":
-                key = 'Rocky OpenMPI eBPF Sample'
+                key = "Rocky OpenMPI eBPF Sample"
             elif row.experiment == "Ubuntu OpenMPI-cpu":
-                key = 'Ubuntu OpenMPI eBPF Sample'
+                key = "Ubuntu OpenMPI eBPF Sample"
             elif row.experiment == "Ubuntu OpenMPI-gpu":
-                key = 'Ubuntu OpenMPI eBPF GPU'
+                key = "Ubuntu OpenMPI eBPF GPU"
             else:
                 raise ValueError(f"Unexpected environment {row.environment}")
             percentage_time = row.seconds / lookup[(key, row.nodes)]
-            res.append([row.nodes, row.experiment, percentage_time, row.metric_name, command])
-            #comm_df.loc[idx, :] = [row.nodes, row.experiment, percentage_time, row.metric_name]
-            #idx += 1
+            res.append(
+                [row.nodes, row.experiment, percentage_time, row.metric_name, command]
+            )
+            # comm_df.loc[idx, :] = [row.nodes, row.experiment, percentage_time, row.metric_name]
+            # idx += 1
 
     # Create DF of percentage values
     comm_df = pandas.DataFrame(res)
     import IPython
+
     IPython.embed()
     comm_df.columns = ["nodes", "experiment", "percentage", "metric", "command"]
-    test = comm_df.groupby(['nodes', 'experiment', 'metric', 'command']).percentage.median()
-    test.to_csv(os.path.join(outdir, 'time-percentages-lammps.csv'))
+    test = comm_df.groupby(
+        ["nodes", "experiment", "metric", "command"]
+    ).percentage.median()
+    test.to_csv(os.path.join(outdir, "time-percentages-lammps.csv"))
 
-#filter_df = comm_df[comm_df.metric == "duration_ns_0B-1KB"]
-#filter_df[filter_df.command == "lmp-read_sock"]
-#filter_df = filter_df[filter_df.command == "lmp-read_sock"]
-#filter_df.groupby(['experiment', 'nodes']).percentage.median()
-#filter_df.groupby(['experiment', 'nodes']).percentage.mean()
+
+# filter_df = comm_df[comm_df.metric == "duration_ns_0B-1KB"]
+# filter_df[filter_df.command == "lmp-read_sock"]
+# filter_df = filter_df[filter_df.command == "lmp-read_sock"]
+# filter_df.groupby(['experiment', 'nodes']).percentage.median()
+# filter_df.groupby(['experiment', 'nodes']).percentage.mean()
 
 
 def plot_open_close(db, outdir):
@@ -514,11 +549,12 @@ def plot_ebpfs(db, outdir):
     # plot_open_close(db, outdir)
 
     # Plot tcp
-    #plot_tcp(db, outdir)
+    # plot_tcp(db, outdir)
     plot_cpu(db, outdir)
     plot_futex(db, outdir)
     # plot_shmem(db, outdir)
     sys.exit()
+
 
 if __name__ == "__main__":
     main()
