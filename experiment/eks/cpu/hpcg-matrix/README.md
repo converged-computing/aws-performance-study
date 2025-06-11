@@ -104,5 +104,5 @@ bash run-study.sh t3.2xlarge 4
 When you are done:
 
 ```bash
-eksctl delete cluster --config-file ./eks-config.yaml --wait
+eksctl delete cluster --config-file ./cfg/eks-config-t3-2xlarge.yaml --wait
 ```
