@@ -1,0 +1,563 @@
+
+
+32 32 32
+15
+chmod: cannot access './wait-fs': No such file or directory
+mv: cannot stat './wait-fs': No such file or directory
+#!/bin/bash
+set -euo pipefail
+flux resource list
+echo "The parent process ID is: $PPID"          
+echo "The execution parent process ID is: $$"         
+CGROUP_PATH_LINE=$(cat "/proc/$$/cgroup")
+echo 
+CGROUP_V2_PATH=${CGROUP_PATH_LINE:3}
+ACTUAL_CGROUP_DIR="/sys/fs/cgroup${CGROUP_V2_PATH}"
+TARGET_CGROUP_ID=$(stat -c '%i' $ACTUAL_CGROUP_DIR)
+echo "The cgroup id is $TARGET_CGROUP_ID"
+echo -n $TARGET_CGROUP_ID > /mnt/flux/cgroup-id.txt
+sleep 5
+flux exec -r all touch /mnt/flux/start_ebpf_collection
+for i in {1..3}
+do
+  echo "FLUX-RUN START hpcg-iter-$i"
+  flux run --setattr=user.study_id=hpcg-iter-$i -N1 -n 96 -o cpu-affinity=per-task -o gpu-affinity=off     /opt/hpcg/xhpcg
+  
+   echo "FLUX-RUN END hpcg-iter-$i"
+done
+
+  echo "FLUX-RESULTS START"
+  cat hpcg*.txt
+  echo "HPCG-BENCHMARKS"
+  cat HPCG-Benchmark*.txt
+  echo "FLUX-RESULTS END"
+
+output=./results/${app}
+(apt-get update > /dev/null 2>&1 && apt-get install -y jq > /dev/null 2>&1) || (yum update -y > /dev/null 2>&1 && yum install -y jq > /dev/null 2>&1)
+mkdir -p $output
+for jobid in $(flux jobs -a --json | jq -r .jobs[].id); do
+    echo
+    study_id=$(flux job info $jobid jobspec | jq -r ".attributes.user.study_id")
+    echo "FLUX-JOB START ${jobid} ${study_id}"
+    echo "FLUX-JOB-JOBSPEC START"
+    flux job info $jobid jobspec
+    echo "FLUX-JOB-JOBSPEC END" 
+    
+    echo "FLUX-JOB-RESOURCES START"
+    flux job info ${jobid} R
+    echo "FLUX-JOB-RESOURCES END"
+    echo "FLUX-JOB-EVENTLOG START" 
+    flux job info $jobid guest.exec.eventlog
+    echo "FLUX-JOB-EVENTLOG END" 
+    echo "FLUX-JOB END ${jobid} ${study_id}"
+done
+echo "FLUX JOB STATS"
+flux job stats 
+
+     STATE NNODES   NCORES    NGPUS NODELIST
+      free      1       96        0 hpcg-0
+ allocated      0        0        0 
+      down      0        0        0 
+The parent process ID is: 105
+The execution parent process ID is: 173
+
+The cgroup id is 162779
+FLUX-RUN START hpcg-iter-1
+FLUX-RUN END hpcg-iter-1
+FLUX-RUN START hpcg-iter-2
+FLUX-RUN END hpcg-iter-2
+FLUX-RUN START hpcg-iter-3
+FLUX-RUN END hpcg-iter-3
+FLUX-RESULTS START
+WARNING: PERFORMING UNPRECONDITIONED ITERATIONS
+Call [0] Number of Iterations [11] Scaled Residual [2.44522e-14]
+WARNING: PERFORMING UNPRECONDITIONED ITERATIONS
+Call [1] Number of Iterations [11] Scaled Residual [2.44522e-14]
+Call [0] Number of Iterations [2] Scaled Residual [6.81756e-17]
+Call [1] Number of Iterations [2] Scaled Residual [6.81756e-17]
+Departure from symmetry (scaled) for SpMV abs(x'*A*y - y'*A*x) = 8.57372e-09
+Departure from symmetry (scaled) for MG abs(x'*Minv*y - y'*Minv*x) = 1.11831e-09
+SpMV call [0] Residual [0]
+SpMV call [1] Residual [0]
+Call [0] Scaled Residual [3.03209e-05]
+Call [1] Scaled Residual [3.03209e-05]
+Call [2] Scaled Residual [3.03209e-05]
+Call [3] Scaled Residual [3.03209e-05]
+Call [4] Scaled Residual [3.03209e-05]
+Call [5] Scaled Residual [3.03209e-05]
+Call [6] Scaled Residual [3.03209e-05]
+Call [7] Scaled Residual [3.03209e-05]
+WARNING: PERFORMING UNPRECONDITIONED ITERATIONS
+Call [0] Number of Iterations [11] Scaled Residual [2.44522e-14]
+WARNING: PERFORMING UNPRECONDITIONED ITERATIONS
+Call [1] Number of Iterations [11] Scaled Residual [2.44522e-14]
+Call [0] Number of Iterations [2] Scaled Residual [6.81756e-17]
+Call [1] Number of Iterations [2] Scaled Residual [6.81756e-17]
+Departure from symmetry (scaled) for SpMV abs(x'*A*y - y'*A*x) = 8.57372e-09
+Departure from symmetry (scaled) for MG abs(x'*Minv*y - y'*Minv*x) = 1.11831e-09
+SpMV call [0] Residual [0]
+SpMV call [1] Residual [0]
+Call [0] Scaled Residual [3.03209e-05]
+Call [1] Scaled Residual [3.03209e-05]
+Call [2] Scaled Residual [3.03209e-05]
+Call [3] Scaled Residual [3.03209e-05]
+Call [4] Scaled Residual [3.03209e-05]
+Call [5] Scaled Residual [3.03209e-05]
+Call [6] Scaled Residual [3.03209e-05]
+Call [7] Scaled Residual [3.03209e-05]
+Call [8] Scaled Residual [3.03209e-05]
+WARNING: PERFORMING UNPRECONDITIONED ITERATIONS
+Call [0] Number of Iterations [11] Scaled Residual [2.44522e-14]
+WARNING: PERFORMING UNPRECONDITIONED ITERATIONS
+Call [1] Number of Iterations [11] Scaled Residual [2.44522e-14]
+Call [0] Number of Iterations [2] Scaled Residual [6.81756e-17]
+Call [1] Number of Iterations [2] Scaled Residual [6.81756e-17]
+Departure from symmetry (scaled) for SpMV abs(x'*A*y - y'*A*x) = 8.57372e-09
+Departure from symmetry (scaled) for MG abs(x'*Minv*y - y'*Minv*x) = 1.11831e-09
+SpMV call [0] Residual [0]
+SpMV call [1] Residual [0]
+Call [0] Scaled Residual [3.03209e-05]
+Call [1] Scaled Residual [3.03209e-05]
+Call [2] Scaled Residual [3.03209e-05]
+Call [3] Scaled Residual [3.03209e-05]
+Call [4] Scaled Residual [3.03209e-05]
+Call [5] Scaled Residual [3.03209e-05]
+HPCG-BENCHMARKS
+HPCG-Benchmark
+version=3.1
+Release date=March 28, 2019
+Machine Summary=
+Machine Summary::Distributed Processes=96
+Machine Summary::Threads per processes=1
+Global Problem Dimensions=
+Global Problem Dimensions::Global nx=128
+Global Problem Dimensions::Global ny=128
+Global Problem Dimensions::Global nz=192
+Processor Dimensions=
+Processor Dimensions::npx=4
+Processor Dimensions::npy=4
+Processor Dimensions::npz=6
+Local Domain Dimensions=
+Local Domain Dimensions::nx=32
+Local Domain Dimensions::ny=32
+Local Domain Dimensions::Lower ipz=0
+Local Domain Dimensions::Upper ipz=5
+Local Domain Dimensions::nz=32
+########## Problem Summary  ##########=
+Setup Information=
+Setup Information::Setup Time=0.249533
+Linear System Information=
+Linear System Information::Number of Equations=3145728
+Linear System Information::Number of Nonzero Terms=83760376
+Multigrid Information=
+Multigrid Information::Number of coarse grid levels=3
+Multigrid Information::Coarse Grids=
+Multigrid Information::Coarse Grids::Grid Level=1
+Multigrid Information::Coarse Grids::Number of Equations=393216
+Multigrid Information::Coarse Grids::Number of Nonzero Terms=10324600
+Multigrid Information::Coarse Grids::Number of Presmoother Steps=1
+Multigrid Information::Coarse Grids::Number of Postsmoother Steps=1
+Multigrid Information::Coarse Grids::Grid Level=2
+Multigrid Information::Coarse Grids::Number of Equations=49152
+Multigrid Information::Coarse Grids::Number of Nonzero Terms=1254712
+Multigrid Information::Coarse Grids::Number of Presmoother Steps=1
+Multigrid Information::Coarse Grids::Number of Postsmoother Steps=1
+Multigrid Information::Coarse Grids::Grid Level=3
+Multigrid Information::Coarse Grids::Number of Equations=6144
+Multigrid Information::Coarse Grids::Number of Nonzero Terms=148120
+Multigrid Information::Coarse Grids::Number of Presmoother Steps=1
+Multigrid Information::Coarse Grids::Number of Postsmoother Steps=1
+########## Memory Use Summary  ##########=
+Memory Use Information=
+Memory Use Information::Total memory used for data (Gbytes)=2.25478
+Memory Use Information::Memory used for OptimizeProblem data (Gbytes)=0
+Memory Use Information::Bytes per equation (Total memory / Number of Equations)=716.776
+Memory Use Information::Memory used for linear system and CG (Gbytes)=1.98353
+Memory Use Information::Coarse Grids=
+Memory Use Information::Coarse Grids::Grid Level=1
+Memory Use Information::Coarse Grids::Memory used=0.237588
+Memory Use Information::Coarse Grids::Grid Level=2
+Memory Use Information::Coarse Grids::Memory used=0.0298768
+Memory Use Information::Coarse Grids::Grid Level=3
+Memory Use Information::Coarse Grids::Memory used=0.00378753
+########## V&V Testing Summary  ##########=
+Spectral Convergence Tests=
+Spectral Convergence Tests::Result=PASSED
+Spectral Convergence Tests::Unpreconditioned=
+Spectral Convergence Tests::Unpreconditioned::Maximum iteration count=11
+Spectral Convergence Tests::Unpreconditioned::Expected iteration count=12
+Spectral Convergence Tests::Preconditioned=
+Spectral Convergence Tests::Preconditioned::Maximum iteration count=2
+Spectral Convergence Tests::Preconditioned::Expected iteration count=2
+Departure from Symmetry |x'Ay-y'Ax|/(2*||x||*||A||*||y||)/epsilon=
+Departure from Symmetry |x'Ay-y'Ax|/(2*||x||*||A||*||y||)/epsilon::Result=PASSED
+Departure from Symmetry |x'Ay-y'Ax|/(2*||x||*||A||*||y||)/epsilon::Departure for SpMV=8.57372e-09
+Departure from Symmetry |x'Ay-y'Ax|/(2*||x||*||A||*||y||)/epsilon::Departure for MG=1.11831e-09
+########## Iterations Summary  ##########=
+Iteration Count Information=
+Iteration Count Information::Result=PASSED
+Iteration Count Information::Reference CG iterations per set=50
+Iteration Count Information::Optimized CG iterations per set=50
+Iteration Count Information::Total number of reference iterations=400
+Iteration Count Information::Total number of optimized iterations=400
+########## Reproducibility Summary  ##########=
+Reproducibility Information=
+Reproducibility Information::Result=PASSED
+Reproducibility Information::Scaled residual mean=3.03209e-05
+Reproducibility Information::Scaled residual variance=0
+########## Performance Summary (times in sec) ##########=
+Benchmark Time Summary=
+Benchmark Time Summary::Optimization phase=3.3e-07
+Benchmark Time Summary::DDOT=4.41662
+Benchmark Time Summary::WAXPBY=0.112792
+Benchmark Time Summary::SpMV=1.79139
+Benchmark Time Summary::MG=13.4327
+Benchmark Time Summary::Total=19.7547
+Floating Point Operations Summary=
+Floating Point Operations Summary::Raw DDOT=7.60008e+09
+Floating Point Operations Summary::Raw WAXPBY=7.60008e+09
+Floating Point Operations Summary::Raw SpMV=6.83485e+10
+Floating Point Operations Summary::Raw MG=3.81596e+11
+Floating Point Operations Summary::Total=4.65144e+11
+Floating Point Operations Summary::Total with convergence overhead=4.65144e+11
+GB/s Summary=
+GB/s Summary::Raw Read B/W=145.079
+GB/s Summary::Raw Write B/W=33.5284
+GB/s Summary::Raw Total B/W=178.608
+GB/s Summary::Total with convergence and optimization phase overhead=176.821
+GFLOP/s Summary=
+GFLOP/s Summary::Raw DDOT=1.72079
+GFLOP/s Summary::Raw WAXPBY=67.3817
+GFLOP/s Summary::Raw SpMV=38.154
+GFLOP/s Summary::Raw MG=28.408
+GFLOP/s Summary::Raw Total=23.546
+GFLOP/s Summary::Total with convergence overhead=23.546
+GFLOP/s Summary::Total with convergence and optimization phase overhead=23.3105
+User Optimization Overheads=
+User Optimization Overheads::Optimization phase time (sec)=3.3e-07
+User Optimization Overheads::Optimization phase time vs reference SpMV+MG time=9.56159e-06
+DDOT Timing Variations=
+DDOT Timing Variations::Min DDOT MPI_Allreduce time=3.04261
+DDOT Timing Variations::Max DDOT MPI_Allreduce time=4.66964
+DDOT Timing Variations::Avg DDOT MPI_Allreduce time=4.09862
+Final Summary=
+Final Summary::HPCG result is VALID with a GFLOP/s rating of=23.3105
+Final Summary::HPCG 2.4 rating for historical reasons is=23.546
+Final Summary::Reference version of ComputeDotProduct used=Performance results are most likely suboptimal
+Final Summary::Reference version of ComputeSPMV used=Performance results are most likely suboptimal
+Final Summary::Reference version of ComputeMG used=Performance results are most likely suboptimal
+Final Summary::Reference version of ComputeWAXPBY used=Performance results are most likely suboptimal
+Final Summary::Results are valid but execution time (sec) is=19.7547
+Final Summary::Official results execution time (sec) must be at least=1800
+HPCG-Benchmark
+version=3.1
+Release date=March 28, 2019
+Machine Summary=
+Machine Summary::Distributed Processes=96
+Machine Summary::Threads per processes=1
+Global Problem Dimensions=
+Global Problem Dimensions::Global nx=128
+Global Problem Dimensions::Global ny=128
+Global Problem Dimensions::Global nz=192
+Processor Dimensions=
+Processor Dimensions::npx=4
+Processor Dimensions::npy=4
+Processor Dimensions::npz=6
+Local Domain Dimensions=
+Local Domain Dimensions::nx=32
+Local Domain Dimensions::ny=32
+Local Domain Dimensions::Lower ipz=0
+Local Domain Dimensions::Upper ipz=5
+Local Domain Dimensions::nz=32
+########## Problem Summary  ##########=
+Setup Information=
+Setup Information::Setup Time=0.256143
+Linear System Information=
+Linear System Information::Number of Equations=3145728
+Linear System Information::Number of Nonzero Terms=83760376
+Multigrid Information=
+Multigrid Information::Number of coarse grid levels=3
+Multigrid Information::Coarse Grids=
+Multigrid Information::Coarse Grids::Grid Level=1
+Multigrid Information::Coarse Grids::Number of Equations=393216
+Multigrid Information::Coarse Grids::Number of Nonzero Terms=10324600
+Multigrid Information::Coarse Grids::Number of Presmoother Steps=1
+Multigrid Information::Coarse Grids::Number of Postsmoother Steps=1
+Multigrid Information::Coarse Grids::Grid Level=2
+Multigrid Information::Coarse Grids::Number of Equations=49152
+Multigrid Information::Coarse Grids::Number of Nonzero Terms=1254712
+Multigrid Information::Coarse Grids::Number of Presmoother Steps=1
+Multigrid Information::Coarse Grids::Number of Postsmoother Steps=1
+Multigrid Information::Coarse Grids::Grid Level=3
+Multigrid Information::Coarse Grids::Number of Equations=6144
+Multigrid Information::Coarse Grids::Number of Nonzero Terms=148120
+Multigrid Information::Coarse Grids::Number of Presmoother Steps=1
+Multigrid Information::Coarse Grids::Number of Postsmoother Steps=1
+########## Memory Use Summary  ##########=
+Memory Use Information=
+Memory Use Information::Total memory used for data (Gbytes)=2.25478
+Memory Use Information::Memory used for OptimizeProblem data (Gbytes)=0
+Memory Use Information::Bytes per equation (Total memory / Number of Equations)=716.776
+Memory Use Information::Memory used for linear system and CG (Gbytes)=1.98353
+Memory Use Information::Coarse Grids=
+Memory Use Information::Coarse Grids::Grid Level=1
+Memory Use Information::Coarse Grids::Memory used=0.237588
+Memory Use Information::Coarse Grids::Grid Level=2
+Memory Use Information::Coarse Grids::Memory used=0.0298768
+Memory Use Information::Coarse Grids::Grid Level=3
+Memory Use Information::Coarse Grids::Memory used=0.00378753
+########## V&V Testing Summary  ##########=
+Spectral Convergence Tests=
+Spectral Convergence Tests::Result=PASSED
+Spectral Convergence Tests::Unpreconditioned=
+Spectral Convergence Tests::Unpreconditioned::Maximum iteration count=11
+Spectral Convergence Tests::Unpreconditioned::Expected iteration count=12
+Spectral Convergence Tests::Preconditioned=
+Spectral Convergence Tests::Preconditioned::Maximum iteration count=2
+Spectral Convergence Tests::Preconditioned::Expected iteration count=2
+Departure from Symmetry |x'Ay-y'Ax|/(2*||x||*||A||*||y||)/epsilon=
+Departure from Symmetry |x'Ay-y'Ax|/(2*||x||*||A||*||y||)/epsilon::Result=PASSED
+Departure from Symmetry |x'Ay-y'Ax|/(2*||x||*||A||*||y||)/epsilon::Departure for SpMV=8.57372e-09
+Departure from Symmetry |x'Ay-y'Ax|/(2*||x||*||A||*||y||)/epsilon::Departure for MG=1.11831e-09
+########## Iterations Summary  ##########=
+Iteration Count Information=
+Iteration Count Information::Result=PASSED
+Iteration Count Information::Reference CG iterations per set=50
+Iteration Count Information::Optimized CG iterations per set=50
+Iteration Count Information::Total number of reference iterations=450
+Iteration Count Information::Total number of optimized iterations=450
+########## Reproducibility Summary  ##########=
+Reproducibility Information=
+Reproducibility Information::Result=PASSED
+Reproducibility Information::Scaled residual mean=3.03209e-05
+Reproducibility Information::Scaled residual variance=0
+########## Performance Summary (times in sec) ##########=
+Benchmark Time Summary=
+Benchmark Time Summary::Optimization phase=4.2e-07
+Benchmark Time Summary::DDOT=2.27735
+Benchmark Time Summary::WAXPBY=0.131215
+Benchmark Time Summary::SpMV=1.99343
+Benchmark Time Summary::MG=12.8866
+Benchmark Time Summary::Total=17.2899
+Floating Point Operations Summary=
+Floating Point Operations Summary::Raw DDOT=8.55009e+09
+Floating Point Operations Summary::Raw WAXPBY=8.55009e+09
+Floating Point Operations Summary::Raw SpMV=7.6892e+10
+Floating Point Operations Summary::Raw MG=4.29295e+11
+Floating Point Operations Summary::Total=5.23287e+11
+Floating Point Operations Summary::Total with convergence overhead=5.23287e+11
+GB/s Summary=
+GB/s Summary::Raw Read B/W=186.481
+GB/s Summary::Raw Write B/W=43.0965
+GB/s Summary::Raw Total B/W=229.578
+GB/s Summary::Total with convergence and optimization phase overhead=226.557
+GFLOP/s Summary=
+GFLOP/s Summary::Raw DDOT=3.7544
+GFLOP/s Summary::Raw WAXPBY=65.161
+GFLOP/s Summary::Raw SpMV=38.5727
+GFLOP/s Summary::Raw MG=33.3134
+GFLOP/s Summary::Raw Total=30.2654
+GFLOP/s Summary::Total with convergence overhead=30.2654
+GFLOP/s Summary::Total with convergence and optimization phase overhead=29.8672
+User Optimization Overheads=
+User Optimization Overheads::Optimization phase time (sec)=4.2e-07
+User Optimization Overheads::Optimization phase time vs reference SpMV+MG time=1.29307e-05
+DDOT Timing Variations=
+DDOT Timing Variations::Min DDOT MPI_Allreduce time=1.55655
+DDOT Timing Variations::Max DDOT MPI_Allreduce time=2.59381
+DDOT Timing Variations::Avg DDOT MPI_Allreduce time=2.10309
+Final Summary=
+Final Summary::HPCG result is VALID with a GFLOP/s rating of=29.8672
+Final Summary::HPCG 2.4 rating for historical reasons is=30.2654
+Final Summary::Reference version of ComputeDotProduct used=Performance results are most likely suboptimal
+Final Summary::Reference version of ComputeSPMV used=Performance results are most likely suboptimal
+Final Summary::Reference version of ComputeMG used=Performance results are most likely suboptimal
+Final Summary::Reference version of ComputeWAXPBY used=Performance results are most likely suboptimal
+Final Summary::Results are valid but execution time (sec) is=17.2899
+Final Summary::Official results execution time (sec) must be at least=1800
+HPCG-Benchmark
+version=3.1
+Release date=March 28, 2019
+Machine Summary=
+Machine Summary::Distributed Processes=96
+Machine Summary::Threads per processes=1
+Global Problem Dimensions=
+Global Problem Dimensions::Global nx=128
+Global Problem Dimensions::Global ny=128
+Global Problem Dimensions::Global nz=192
+Processor Dimensions=
+Processor Dimensions::npx=4
+Processor Dimensions::npy=4
+Processor Dimensions::npz=6
+Local Domain Dimensions=
+Local Domain Dimensions::nx=32
+Local Domain Dimensions::ny=32
+Local Domain Dimensions::Lower ipz=0
+Local Domain Dimensions::Upper ipz=5
+Local Domain Dimensions::nz=32
+########## Problem Summary  ##########=
+Setup Information=
+Setup Information::Setup Time=0.258194
+Linear System Information=
+Linear System Information::Number of Equations=3145728
+Linear System Information::Number of Nonzero Terms=83760376
+Multigrid Information=
+Multigrid Information::Number of coarse grid levels=3
+Multigrid Information::Coarse Grids=
+Multigrid Information::Coarse Grids::Grid Level=1
+Multigrid Information::Coarse Grids::Number of Equations=393216
+Multigrid Information::Coarse Grids::Number of Nonzero Terms=10324600
+Multigrid Information::Coarse Grids::Number of Presmoother Steps=1
+Multigrid Information::Coarse Grids::Number of Postsmoother Steps=1
+Multigrid Information::Coarse Grids::Grid Level=2
+Multigrid Information::Coarse Grids::Number of Equations=49152
+Multigrid Information::Coarse Grids::Number of Nonzero Terms=1254712
+Multigrid Information::Coarse Grids::Number of Presmoother Steps=1
+Multigrid Information::Coarse Grids::Number of Postsmoother Steps=1
+Multigrid Information::Coarse Grids::Grid Level=3
+Multigrid Information::Coarse Grids::Number of Equations=6144
+Multigrid Information::Coarse Grids::Number of Nonzero Terms=148120
+Multigrid Information::Coarse Grids::Number of Presmoother Steps=1
+Multigrid Information::Coarse Grids::Number of Postsmoother Steps=1
+########## Memory Use Summary  ##########=
+Memory Use Information=
+Memory Use Information::Total memory used for data (Gbytes)=2.25478
+Memory Use Information::Memory used for OptimizeProblem data (Gbytes)=0
+Memory Use Information::Bytes per equation (Total memory / Number of Equations)=716.776
+Memory Use Information::Memory used for linear system and CG (Gbytes)=1.98353
+Memory Use Information::Coarse Grids=
+Memory Use Information::Coarse Grids::Grid Level=1
+Memory Use Information::Coarse Grids::Memory used=0.237588
+Memory Use Information::Coarse Grids::Grid Level=2
+Memory Use Information::Coarse Grids::Memory used=0.0298768
+Memory Use Information::Coarse Grids::Grid Level=3
+Memory Use Information::Coarse Grids::Memory used=0.00378753
+########## V&V Testing Summary  ##########=
+Spectral Convergence Tests=
+Spectral Convergence Tests::Result=PASSED
+Spectral Convergence Tests::Unpreconditioned=
+Spectral Convergence Tests::Unpreconditioned::Maximum iteration count=11
+Spectral Convergence Tests::Unpreconditioned::Expected iteration count=12
+Spectral Convergence Tests::Preconditioned=
+Spectral Convergence Tests::Preconditioned::Maximum iteration count=2
+Spectral Convergence Tests::Preconditioned::Expected iteration count=2
+Departure from Symmetry |x'Ay-y'Ax|/(2*||x||*||A||*||y||)/epsilon=
+Departure from Symmetry |x'Ay-y'Ax|/(2*||x||*||A||*||y||)/epsilon::Result=PASSED
+Departure from Symmetry |x'Ay-y'Ax|/(2*||x||*||A||*||y||)/epsilon::Departure for SpMV=8.57372e-09
+Departure from Symmetry |x'Ay-y'Ax|/(2*||x||*||A||*||y||)/epsilon::Departure for MG=1.11831e-09
+########## Iterations Summary  ##########=
+Iteration Count Information=
+Iteration Count Information::Result=PASSED
+Iteration Count Information::Reference CG iterations per set=50
+Iteration Count Information::Optimized CG iterations per set=50
+Iteration Count Information::Total number of reference iterations=300
+Iteration Count Information::Total number of optimized iterations=300
+########## Reproducibility Summary  ##########=
+Reproducibility Information=
+Reproducibility Information::Result=PASSED
+Reproducibility Information::Scaled residual mean=3.03209e-05
+Reproducibility Information::Scaled residual variance=0
+########## Performance Summary (times in sec) ##########=
+Benchmark Time Summary=
+Benchmark Time Summary::Optimization phase=3.7e-07
+Benchmark Time Summary::DDOT=1.20543
+Benchmark Time Summary::WAXPBY=0.0851428
+Benchmark Time Summary::SpMV=1.36325
+Benchmark Time Summary::MG=8.49087
+Benchmark Time Summary::Total=11.1456
+Floating Point Operations Summary=
+Floating Point Operations Summary::Raw DDOT=5.70006e+09
+Floating Point Operations Summary::Raw WAXPBY=5.70006e+09
+Floating Point Operations Summary::Raw SpMV=5.12614e+10
+Floating Point Operations Summary::Raw MG=2.86197e+11
+Floating Point Operations Summary::Total=3.48858e+11
+Floating Point Operations Summary::Total with convergence overhead=3.48858e+11
+GB/s Summary=
+GB/s Summary::Raw Read B/W=192.856
+GB/s Summary::Raw Write B/W=44.5698
+GB/s Summary::Raw Total B/W=237.426
+GB/s Summary::Total with convergence and optimization phase overhead=234.171
+GFLOP/s Summary=
+GFLOP/s Summary::Raw DDOT=4.72866
+GFLOP/s Summary::Raw WAXPBY=66.947
+GFLOP/s Summary::Raw SpMV=37.6022
+GFLOP/s Summary::Raw MG=33.7064
+GFLOP/s Summary::Raw Total=31.3
+GFLOP/s Summary::Total with convergence overhead=31.3
+GFLOP/s Summary::Total with convergence and optimization phase overhead=30.8709
+User Optimization Overheads=
+User Optimization Overheads::Optimization phase time (sec)=3.7e-07
+User Optimization Overheads::Optimization phase time vs reference SpMV+MG time=1.13828e-05
+DDOT Timing Variations=
+DDOT Timing Variations::Min DDOT MPI_Allreduce time=0.756685
+DDOT Timing Variations::Max DDOT MPI_Allreduce time=1.40467
+DDOT Timing Variations::Avg DDOT MPI_Allreduce time=1.09984
+Final Summary=
+Final Summary::HPCG result is VALID with a GFLOP/s rating of=30.8709
+Final Summary::HPCG 2.4 rating for historical reasons is=31.3
+Final Summary::Reference version of ComputeDotProduct used=Performance results are most likely suboptimal
+Final Summary::Reference version of ComputeSPMV used=Performance results are most likely suboptimal
+Final Summary::Reference version of ComputeMG used=Performance results are most likely suboptimal
+Final Summary::Reference version of ComputeWAXPBY used=Performance results are most likely suboptimal
+Final Summary::Results are valid but execution time (sec) is=11.1456
+Final Summary::Official results execution time (sec) must be at least=1800
+FLUX-RESULTS END
+
+FLUX-JOB START 989604085760 hpcg-iter-3
+FLUX-JOB-JOBSPEC START
+{"resources": [{"type": "node", "count": 1, "with": [{"type": "slot", "count": 96, "with": [{"type": "core", "count": 1}], "label": "task"}]}], "tasks": [{"command": ["/opt/hpcg/xhpcg"], "slot": "task", "count": {"per_slot": 1}}], "attributes": {"system": {"duration": 0, "cwd": "/opt/hpcg", "shell": {"options": {"rlimit": {"cpu": -1, "fsize": -1, "data": -1, "stack": 10485760, "core": -1, "nofile": 1048576, "as": -1, "rss": -1, "nproc": -1}, "cpu-affinity": "per-task", "gpu-affinity": "off"}}}, "user": {"study_id": "hpcg-iter-3"}}, "version": 1}
+FLUX-JOB-JOBSPEC END
+FLUX-JOB-RESOURCES START
+{"version": 1, "execution": {"R_lite": [{"rank": "0", "children": {"core": "0-95"}}], "starttime": 1749590943.2468588, "expiration": 0.0, "nodelist": ["hpcg-0"]}}
+FLUX-JOB-RESOURCES END
+FLUX-JOB-EVENTLOG START
+{"timestamp":1749590943.2488542,"name":"init"}
+{"timestamp":1749590943.2494264,"name":"starting"}
+{"timestamp":1749590943.2610309,"name":"shell.init","context":{"service":"0-shell-fSzivcQf","leader-rank":0,"size":1}}
+{"timestamp":1749590943.5957873,"name":"shell.start","context":{"taskmap":{"version":1,"map":[[0,1,96,1]]}}}
+{"timestamp":1749590962.7290146,"name":"shell.task-exit","context":{"localid":67,"rank":67,"state":"Exited","pid":860,"wait_status":0,"signaled":0,"exitcode":0}}
+{"timestamp":1749590962.7827413,"name":"complete","context":{"status":0}}
+{"timestamp":1749590962.7828298,"name":"done"}
+
+FLUX-JOB-EVENTLOG END
+FLUX-JOB END 989604085760 hpcg-iter-3
+
+FLUX-JOB START 571180318720 hpcg-iter-2
+FLUX-JOB-JOBSPEC START
+{"resources": [{"type": "node", "count": 1, "with": [{"type": "slot", "count": 96, "with": [{"type": "core", "count": 1}], "label": "task"}]}], "tasks": [{"command": ["/opt/hpcg/xhpcg"], "slot": "task", "count": {"per_slot": 1}}], "attributes": {"system": {"duration": 0, "cwd": "/opt/hpcg", "shell": {"options": {"rlimit": {"cpu": -1, "fsize": -1, "data": -1, "stack": 10485760, "core": -1, "nofile": 1048576, "as": -1, "rss": -1, "nproc": -1}, "cpu-affinity": "per-task", "gpu-affinity": "off"}}}, "user": {"study_id": "hpcg-iter-2"}}, "version": 1}
+FLUX-JOB-JOBSPEC END
+FLUX-JOB-RESOURCES START
+{"version": 1, "execution": {"R_lite": [{"rank": "0", "children": {"core": "0-95"}}], "starttime": 1749590918.3077404, "expiration": 0.0, "nodelist": ["hpcg-0"]}}
+FLUX-JOB-RESOURCES END
+FLUX-JOB-EVENTLOG START
+{"timestamp":1749590918.309654,"name":"init"}
+{"timestamp":1749590918.3208063,"name":"shell.init","context":{"service":"0-shell-fG1EFS8f","leader-rank":0,"size":1}}
+{"timestamp":1749590918.310113,"name":"starting"}
+{"timestamp":1749590918.6609714,"name":"shell.start","context":{"taskmap":{"version":1,"map":[[0,1,96,1]]}}}
+{"timestamp":1749590942.9453402,"name":"shell.task-exit","context":{"localid":48,"rank":48,"state":"Exited","pid":626,"wait_status":0,"signaled":0,"exitcode":0}}
+{"timestamp":1749590943.0067704,"name":"complete","context":{"status":0}}
+{"timestamp":1749590943.0068262,"name":"done"}
+
+FLUX-JOB-EVENTLOG END
+FLUX-JOB END 571180318720 hpcg-iter-2
+
+FLUX-JOB START 101518934016 hpcg-iter-1
+FLUX-JOB-JOBSPEC START
+{"resources": [{"type": "node", "count": 1, "with": [{"type": "slot", "count": 96, "with": [{"type": "core", "count": 1}], "label": "task"}]}], "tasks": [{"command": ["/opt/hpcg/xhpcg"], "slot": "task", "count": {"per_slot": 1}}], "attributes": {"system": {"duration": 0, "cwd": "/opt/hpcg", "shell": {"options": {"rlimit": {"cpu": -1, "fsize": -1, "data": -1, "stack": 10485760, "core": -1, "nofile": 1048576, "as": -1, "rss": -1, "nproc": -1}, "cpu-affinity": "per-task", "gpu-affinity": "off"}}}, "user": {"study_id": "hpcg-iter-1"}}, "version": 1}
+FLUX-JOB-JOBSPEC END
+FLUX-JOB-RESOURCES START
+{"version": 1, "execution": {"R_lite": [{"rank": "0", "children": {"core": "0-95"}}], "starttime": 1749590890.3132594, "expiration": 0.0, "nodelist": ["hpcg-0"]}}
+FLUX-JOB-RESOURCES END
+FLUX-JOB-EVENTLOG START
+{"timestamp":1749590890.3146033,"name":"init"}
+{"timestamp":1749590890.3150399,"name":"starting"}
+{"timestamp":1749590890.3271377,"name":"shell.init","context":{"service":"0-shell-f3fft5DZ","leader-rank":0,"size":1}}
+{"timestamp":1749590890.6499183,"name":"shell.start","context":{"taskmap":{"version":1,"map":[[0,1,96,1]]}}}
+{"timestamp":1749590918.0179718,"name":"shell.task-exit","context":{"localid":44,"rank":44,"state":"Exited","pid":422,"wait_status":0,"signaled":0,"exitcode":0}}
+{"timestamp":1749590918.067179,"name":"complete","context":{"status":0}}
+{"timestamp":1749590918.0672376,"name":"done"}
+
+FLUX-JOB-EVENTLOG END
+FLUX-JOB END 101518934016 hpcg-iter-1
+FLUX JOB STATS
+{"job_states":{"depend":0,"priority":0,"sched":0,"run":0,"cleanup":0,"inactive":3,"total":3},"successful":3,"failed":0,"canceled":0,"timeout":0,"inactive_purged":0,"queues":[]}
