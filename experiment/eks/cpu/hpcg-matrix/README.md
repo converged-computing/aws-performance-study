@@ -9,6 +9,7 @@ Create the cluster.
 eksctl create cluster --config-file ./cfg/eks-config-hpc6a.48xlarge.yaml
 eksctl create cluster --config-file ./cfg/eks-config-t3-2xlarge.yaml
 eksctl create cluster --config-file ./cfg/eks-config-m6a.12xlarge.yaml
+eksctl create cluster --config-file ./cfg/eks-config-m6i.12xlarge.yaml
 
 aws eks update-kubeconfig --region us-east-2 --name hpcg-test
 ```
@@ -95,6 +96,7 @@ After this test instance I used the script:
 # bash run-study.sh $instance $tasks
 bash run-study.sh t3.2xlarge 4
 bash run-study.sh m6a.12xlarge 24
+bash run-study.sh m6i.12xlarge 24
 ```
 
 ## Clean Up
