@@ -273,53 +273,57 @@ def plot_futex(db, outdir):
     Look at tcp calls (and change) as we increase in size.
     """
     analysis = "futex"
-    df = get_table_for_analysis(db, analysis)
-    df = df[df.context == "xhpcg"]
+    all_df = get_table_for_analysis(db, analysis)
+    all_df = all_df[all_df.context == "xhpcg"]
+    for instance in all_df.environment_type.unique():
+        df = all_df[all_df.environment_type == instance]
 
-    # Convert all nanoseconds to seconds.
-    df["microseconds"] = df.metric_value / 1000
-    df["optimization"] = [x.split("-")[-1] for x in df.experiment.tolist()]
-    img_outdir = os.path.join(outdir, "img")
-    fig = plt.figure(figsize=(17, 5))
-    gs = plt.GridSpec(1, 2, width_ratios=[7, 1])
-    axes = []
-    axes.append(fig.add_subplot(gs[0, 0]))
-    axes.append(fig.add_subplot(gs[0, 1]))
-    data_sorted = df.sort_values(by="microseconds", ascending=True)
-    order = (
-        data_sorted.groupby("experiment")["microseconds"]
-        .mean()
-        .sort_values(ascending=True)
-        .index
-    )
-    sns.set_style("whitegrid")
-    sns.barplot(
-        data_sorted,
-        ax=axes[0],
-        x="experiment",
-        y="microseconds",
-        hue="optimization",
-        err_kws={"color": "darkred"},
-        order=order,
-    )
-    axes[0].set_title(f"HPCG (xhpcg) Cumulative Futex Wait Times", fontsize=12)
-    axes[0].set_ylabel("Time (µs)", fontsize=12)
-    axes[0].set_xlabel("Micro-architecture and Optimization", fontsize=14)
-    axes[0].tick_params(axis="x", rotation=90)
-    handles, labels = axes[0].get_legend_handles_labels()
-    axes[1].legend(
-        handles,
-        labels,
-        loc="center left",
-        bbox_to_anchor=(-0.1, 0.5),
-        frameon=False,
-    )
-    axes[1].axis("off")
-    axes[0].get_legend().remove()
-    plt.tight_layout()
-    plt.savefig(os.path.join(img_outdir, "xhpcg-median-futex-wait.png"))
-    plt.savefig(os.path.join(img_outdir, "xhpcg-median-futex-wait.svg"))
-    plt.clf()
+        # Convert all nanoseconds to seconds.
+        df["microseconds"] = df.metric_value / 1000
+        df["optimization"] = [x.split("-")[-1] for x in df.experiment.tolist()]
+        img_outdir = os.path.join(outdir, "img")
+        fig = plt.figure(figsize=(17, 5))
+        gs = plt.GridSpec(1, 2, width_ratios=[7, 1])
+        axes = []
+        axes.append(fig.add_subplot(gs[0, 0]))
+        axes.append(fig.add_subplot(gs[0, 1]))
+        data_sorted = df.sort_values(by="microseconds", ascending=True)
+        order = (
+            data_sorted.groupby("experiment")["microseconds"]
+            .mean()
+            .sort_values(ascending=True)
+            .index
+        )
+        sns.set_style("whitegrid")
+        sns.barplot(
+            data_sorted,
+            ax=axes[0],
+            x="experiment",
+            y="microseconds",
+            hue="optimization",
+            err_kws={"color": "darkred"},
+            order=order,
+        )
+        axes[0].set_title(
+            f"HPCG (xhpcg) Cumulative Futex Wait Times for {instance}", fontsize=12
+        )
+        axes[0].set_ylabel("Time (µs)", fontsize=12)
+        axes[0].set_xlabel("Micro-architecture and Optimization", fontsize=14)
+        axes[0].tick_params(axis="x", rotation=90)
+        handles, labels = axes[0].get_legend_handles_labels()
+        axes[1].legend(
+            handles,
+            labels,
+            loc="center left",
+            bbox_to_anchor=(-0.1, 0.5),
+            frameon=False,
+        )
+        axes[1].axis("off")
+        axes[0].get_legend().remove()
+        plt.tight_layout()
+        plt.savefig(os.path.join(img_outdir, f"xhpcg-median-futex-wait-{instance}.png"))
+        plt.savefig(os.path.join(img_outdir, f"xhpcg-median-futex-wait-{instance}.svg"))
+        plt.clf()
 
 
 def plot_cpu(db, outdir):
@@ -327,67 +331,75 @@ def plot_cpu(db, outdir):
     Look at tcp calls (and change) as we increase in size.
     """
     analysis = "cpu"
-    df = get_table_for_analysis(db, analysis)
-    df = df[df.context == "xhpcg"]
-    waiting = df[df.metric_name == "cpu_waiting_ns"]
-    running = df[df.metric_name == "cpu_running_ns"]
-    print(df)
-    one = running.groupby(
-        ["environment", "environment_type", "compatible"]
-    ).metric_value.median()
-    two = waiting.groupby(
-        ["environment", "environment_type", "compatible"]
-    ).metric_value.median()
-    # TODO it would be better if we don't take median and can show variation.
-    view = pandas.DataFrame(one / two)
-    view.loc[:, "experiment"] = [
-        x[0].replace("-not-compatible", "") for x in view.index
-    ]
-    view.loc[:, "environment"] = [x[1] for x in view.index]
-    view.loc[:, "compatible"] = [x[2] for x in view.index]
-    data_sorted = view.sort_values(by="metric_value", ascending=True)
-    order = (
-        data_sorted.groupby("experiment")["metric_value"]
-        .mean()
-        .sort_values(ascending=True)
-        .index
-    )
+    all_df = get_table_for_analysis(db, analysis)
+    all_df = all_df[all_df.context == "xhpcg"]
+    for instance in all_df.environment_type.unique():
+        df = all_df[all_df.environment_type == instance]
+        waiting = df[df.metric_name == "cpu_waiting_ns"]
+        running = df[df.metric_name == "cpu_running_ns"]
+        print(df)
+        one = running.groupby(
+            ["environment", "environment_type", "compatible"]
+        ).metric_value.median()
+        two = waiting.groupby(
+            ["environment", "environment_type", "compatible"]
+        ).metric_value.median()
+        # TODO it would be better if we don't take median and can show variation.
+        view = pandas.DataFrame(one / two)
+        view.loc[:, "experiment"] = [
+            x[0].replace("-not-compatible", "") for x in view.index
+        ]
+        view.loc[:, "environment"] = [x[1] for x in view.index]
+        view.loc[:, "compatible"] = [x[2] for x in view.index]
+        data_sorted = view.sort_values(by="metric_value", ascending=True)
+        order = (
+            data_sorted.groupby("experiment")["metric_value"]
+            .mean()
+            .sort_values(ascending=True)
+            .index
+        )
 
-    # These are all cpu
-    img_outdir = os.path.join(outdir, "img")
-    fig = plt.figure(figsize=(22, 5))
-    gs = plt.GridSpec(1, 2, width_ratios=[9, 1])
-    axes = []
-    axes.append(fig.add_subplot(gs[0, 0]))
-    axes.append(fig.add_subplot(gs[0, 1]))
-    sns.set_style("whitegrid")
-    sns.barplot(
-        data_sorted,
-        ax=axes[0],
-        x="experiment",
-        y="metric_value",
-        hue="compatible",
-        err_kws={"color": "darkred"},
-        order=order,
-    )
-    axes[0].set_title(f"HPCG (xhpcg) CPU Running/Waiting ratio", fontsize=12)
-    axes[0].set_ylabel("Ratio", fontsize=14)
-    axes[0].set_xlabel("Micro-architecture and Optimization", fontsize=14)
-    axes[0].tick_params(axis="x", rotation=90)
-    handles, labels = axes[0].get_legend_handles_labels()
-    axes[1].legend(
-        handles,
-        labels,
-        loc="center left",
-        bbox_to_anchor=(-0.1, 0.5),
-        frameon=False,
-    )
-    axes[0].get_legend().remove()
-    axes[1].axis("off")
-    plt.tight_layout()
-    plt.savefig(os.path.join(img_outdir, "xhpcg-running-waiting-cpu-ratio.png"))
-    plt.savefig(os.path.join(img_outdir, "xhpcg-running-waiting-cpu-ratio.svg"))
-    plt.clf()
+        # These are all cpu
+        img_outdir = os.path.join(outdir, "img")
+        fig = plt.figure(figsize=(22, 5))
+        gs = plt.GridSpec(1, 2, width_ratios=[9, 1])
+        axes = []
+        axes.append(fig.add_subplot(gs[0, 0]))
+        axes.append(fig.add_subplot(gs[0, 1]))
+        sns.set_style("whitegrid")
+        sns.barplot(
+            data_sorted,
+            ax=axes[0],
+            x="experiment",
+            y="metric_value",
+            hue="compatible",
+            err_kws={"color": "darkred"},
+            order=order,
+        )
+        axes[0].set_title(
+            f"HPCG (xhpcg) CPU Running/Waiting ratio for {instance}", fontsize=12
+        )
+        axes[0].set_ylabel("Ratio", fontsize=14)
+        axes[0].set_xlabel("Micro-architecture and Optimization", fontsize=14)
+        axes[0].tick_params(axis="x", rotation=90)
+        handles, labels = axes[0].get_legend_handles_labels()
+        axes[1].legend(
+            handles,
+            labels,
+            loc="center left",
+            bbox_to_anchor=(-0.1, 0.5),
+            frameon=False,
+        )
+        axes[0].get_legend().remove()
+        axes[1].axis("off")
+        plt.tight_layout()
+        plt.savefig(
+            os.path.join(img_outdir, f"xhpcg-running-waiting-cpu-ratio-{instance}.png")
+        )
+        plt.savefig(
+            os.path.join(img_outdir, f"xhpcg-running-waiting-cpu-ratio-{instance}.svg")
+        )
+        plt.clf()
 
 
 def plot_tcp(db, outdir):

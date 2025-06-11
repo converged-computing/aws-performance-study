@@ -1,10 +1,6 @@
 # Optimization Test
 
-Let's run hpcg on different optimizations. 
-
-Here we will walk through the steps it took to design manifests for NFD, and learn about the design. This walkthrough should be helpful for others that want an introduction or to do similar for their containers. At a high level, we are going to use NFD "Node Feature Discovery" ([ref](https://kubernetes-sigs.github.io/node-feature-discovery/stable/get-started/index.html))
-
-The problem we need to address is a means to discover the best container for a given node. Our targeted node is the container to install eBPF, which must have a matching operating system and (close enough) kernel version. While we will be sampling from different tags of a container URI, there is no reason that a selection could not cross namespaces. We would not want to automatically require parsing an entire set of tags, as 
+Let's run hpcg on different optimizations. For instance selection I am aiming for $2-3, in the lower range if allowed.
 
 Create the cluster.
 
@@ -12,6 +8,7 @@ Create the cluster.
 # Choose an instance config
 eksctl create cluster --config-file ./cfg/eks-config-hpc6a.48xlarge.yaml
 eksctl create cluster --config-file ./cfg/eks-config-t3-2xlarge.yaml
+eksctl create cluster --config-file ./cfg/eks-config-m6a.12xlarge.yaml
 
 aws eks update-kubeconfig --region us-east-2 --name hpcg-test
 ```
@@ -97,6 +94,7 @@ After this test instance I used the script:
 ```bash
 # bash run-study.sh $instance $tasks
 bash run-study.sh t3.2xlarge 4
+bash run-study.sh m6a.12xlarge 24
 ```
 
 ## Clean Up
@@ -105,4 +103,5 @@ When you are done:
 
 ```bash
 eksctl delete cluster --config-file ./cfg/eks-config-t3-2xlarge.yaml --wait
+eksctl delete cluster --config-file ./cfg/eks-config-m6a.12xlarge.yaml
 ```

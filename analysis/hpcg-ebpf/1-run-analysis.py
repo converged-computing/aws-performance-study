@@ -142,12 +142,15 @@ def add_hpcg_result(p, indir, filename, ebpf=None, gpu=False):
     Add a new hpcg result
     """
     exp = ps.ExperimentNameParser(filename, indir)
-    p.set_context(exp.cloud, exp.env, exp.env_type, exp.size)
 
     # Sanity check the files we found
     print(filename)
     env_name = filename.split(os.sep)[-2]
+    instance = filename.split(os.sep)[-3]
     exp.show()
+
+    # Use the env field for the instance type.
+    p.set_context(exp.cloud, instance, exp.env_type, exp.size)
 
     item = ps.read_file(filename)
     if "exited with exit code 132" in item:
@@ -175,7 +178,6 @@ def parse_data(indir, outdir, files):
     for filename in files:
         if "test" in filename:
             continue
-        basename = os.path.basename(filename)
         p = add_hpcg_result(p, indir, filename)
 
     # Save stuff to file first
@@ -198,71 +200,78 @@ def plot_results(df, outdir, non_anon=False):
     # We can look at the metric across sizes, colored by experiment
     for metric in df.metric.unique():
         metric_df = df[df.metric == metric]
-        frames[metric] = {"cpu": metric_df}
+        frames[metric] = {}
+        for instance in metric_df.env.unique():
+            print(instance)
+            instance_df = metric_df[metric_df.env == instance]
+            frames[metric][instance] = instance_df
 
     print(metric_df.problem_size.unique())
-    for metric, data_frames in frames.items():
-        if metric == "compatible":
-            plot_compatible(data_frames["cpu"], img_outdir)
-            continue
-        hue = "optimization"
-        fig = plt.figure(figsize=(22, 5))
-        axes = []
-        gs = plt.GridSpec(1, 2, width_ratios=[7, 1])
-        axes.append(fig.add_subplot(gs[0, 0]))
-        axes.append(fig.add_subplot(gs[0, 1]))
+    for metric, instances in frames.items():
+        for instance, data_frame in instances.items():
+            if metric == "compatible":
+                plot_compatible(data_frame, instance, img_outdir)
+                continue
+            hue = "optimization"
+            fig = plt.figure(figsize=(22, 5))
+            axes = []
+            gs = plt.GridSpec(1, 2, width_ratios=[7, 1])
+            axes.append(fig.add_subplot(gs[0, 0]))
+            axes.append(fig.add_subplot(gs[0, 1]))
 
-        data_sorted = data_frames["cpu"].sort_values(by="value", ascending=True)
-        order = (
-            data_sorted.groupby("problem_size")["value"]
-            .mean()
-            .sort_values(ascending=True)
-            .index
-        )
+            data_sorted = data_frame.sort_values(by="value", ascending=True)
+            order = (
+                data_sorted.groupby("problem_size")["value"]
+                .mean()
+                .sort_values(ascending=True)
+                .index
+            )
 
-        sns.set_style("whitegrid")
-        func = sns.barplot
-        func(
-            data_sorted,
-            ax=axes[0],
-            x="problem_size",
-            y="value",
-            hue=hue,
-            err_kws={"color": "darkred"},
-            order=order,
-        )
-        if metric in ["duration"]:
-            axes[0].set_title(f"HPCG (xhpcg) {metric.capitalize()}", fontsize=14)
-            axes[0].set_ylabel("Seconds", fontsize=14)
-        elif "fom" in metric:
-            axes[0].set_title("HPCG (xhpcg) Gflop/s", fontsize=14)
-            axes[0].set_ylabel("Gflop/second", fontsize=14)
-        axes[0].set_xlabel("Micro-architecture and Optimization", fontsize=14)
+            sns.set_style("whitegrid")
+            func = sns.barplot
+            func(
+                data_sorted,
+                ax=axes[0],
+                x="problem_size",
+                y="value",
+                hue=hue,
+                err_kws={"color": "darkred"},
+                order=order,
+            )
+            if metric in ["duration"]:
+                axes[0].set_title(
+                    f"HPCG (xhpcg) {metric.capitalize()} for {instance}", fontsize=14
+                )
+                axes[0].set_ylabel("Seconds", fontsize=14)
+            elif "fom" in metric:
+                axes[0].set_title(f"HPCG (xhpcg) Gflop/s for {instance}", fontsize=14)
+                axes[0].set_ylabel("Gflop/second", fontsize=14)
+            axes[0].set_xlabel("Micro-architecture and Optimization", fontsize=14)
 
-        axes[0].tick_params(axis="x", rotation=90)
+            axes[0].tick_params(axis="x", rotation=90)
 
-        handles, labels = axes[0].get_legend_handles_labels()
-        labels = ["/".join(x.split("/")[0:2]) for x in labels]
-        axes[1].legend(
-            handles,
-            labels,
-            loc="center left",
-            bbox_to_anchor=(-0.1, 0.5),
-            frameon=False,
-        )
-        for ax in axes[0:1]:
-            ax.get_legend().remove()
-        axes[1].axis("off")
-        plt.tight_layout()
-        plt.savefig(os.path.join(img_outdir, f"xhpcg-{metric}.svg"))
-        plt.savefig(os.path.join(img_outdir, f"xhpcg-{metric}.png"))
-        plt.clf()
+            handles, labels = axes[0].get_legend_handles_labels()
+            labels = ["/".join(x.split("/")[0:2]) for x in labels]
+            axes[1].legend(
+                handles,
+                labels,
+                loc="center left",
+                bbox_to_anchor=(-0.1, 0.5),
+                frameon=False,
+            )
+            for ax in axes[0:1]:
+                ax.get_legend().remove()
+            axes[1].axis("off")
+            plt.tight_layout()
+            plt.savefig(os.path.join(img_outdir, f"xhpcg-{instance}-{metric}.svg"))
+            plt.savefig(os.path.join(img_outdir, f"xhpcg-{instance}-{metric}.png"))
+            plt.clf()
 
-        # Print the total number of data points
-        print(f'Total number of datum: {data_frames["cpu"].shape[0]}')
+            # Print the total number of data points
+            print(f"Total number of datum: {data_frame.shape[0]}")
 
 
-def plot_compatible(df, img_outdir):
+def plot_compatible(df, instance, img_outdir):
     """
     Plot compatibility matrix
     """
@@ -291,12 +300,12 @@ def plot_compatible(df, img_outdir):
         cbar_pos=None,
         annot=True,
     )
-    g.fig.suptitle("HPCG (xhpcg) Compatibility")
+    g.fig.suptitle(f"HPCG (xhpcg) Compatibility for {instance}")
     plt.xlabel("Micro-architecture")
     plt.ylabel("Optimization")
     plt.tight_layout()
-    plt.savefig(os.path.join(img_outdir, f"xhpcg-optimization.svg"))
-    plt.savefig(os.path.join(img_outdir, f"xhpcg-optimization.png"))
+    plt.savefig(os.path.join(img_outdir, f"xhpcg-optimization-{instance}.svg"))
+    plt.savefig(os.path.join(img_outdir, f"xhpcg-optimization-{instance}.png"))
     plt.clf()
 
 

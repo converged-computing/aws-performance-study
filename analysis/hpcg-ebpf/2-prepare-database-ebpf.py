@@ -69,6 +69,8 @@ def add_ebpf_result(indir, filename, io_counts):
     env_name = filename.split(os.sep)[-2]
     exp = ps.ExperimentNameParser(filename, indir)
 
+    # We will use env for instance type
+    instance = filename.split(os.sep)[-3]
     item = ps.read_file(filename)
     if "PROGRAM" not in item:
         return
@@ -86,7 +88,7 @@ def add_ebpf_result(indir, filename, io_counts):
                 exp.cloud,
                 analysis,
                 env_name,
-                exp.env_type,
+                instance,
                 exp.size,
                 name,
                 value,
@@ -100,7 +102,7 @@ def add_ebpf_result(indir, filename, io_counts):
                 exp.cloud,
                 analysis,
                 env_name,
-                exp.env_type,
+                instance,
                 exp.size,
                 name,
                 value,
@@ -112,7 +114,7 @@ def add_ebpf_result(indir, filename, io_counts):
                 exp.cloud,
                 analysis,
                 env_name,
-                exp.env_type,
+                instance,
                 exp.size,
                 name,
                 value,
@@ -126,7 +128,7 @@ def add_ebpf_result(indir, filename, io_counts):
                 exp.cloud,
                 analysis,
                 env_name,
-                exp.env_type,
+                instance,
                 exp.size,
                 name,
                 value,
