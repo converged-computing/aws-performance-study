@@ -264,7 +264,7 @@ def plot_results(df, outdir, non_anon=False):
             axes[1].axis("off")
             plt.tight_layout()
             plt.savefig(os.path.join(img_outdir, f"xhpcg-{instance}-{metric}.svg"))
-            plt.savefig(os.path.join(img_outdir, f"xhpcg-{instance}-{metric}.png"))
+            # plt.savefig(os.path.join(img_outdir, f"xhpcg-{instance}-{metric}.png"))
             plt.clf()
 
             # Print the total number of data points
