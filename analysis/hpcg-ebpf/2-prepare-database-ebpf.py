@@ -67,6 +67,7 @@ def add_ebpf_result(indir, filename, io_counts):
     global db
     global total_counts
     env_name = filename.split(os.sep)[-2]
+    env_name = env_name.replace('-arm', '')
     exp = ps.ExperimentNameParser(filename, indir)
 
     # We will use env for instance type

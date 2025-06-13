@@ -84,8 +84,9 @@ def parse_flux_jobs(item):
     # FOM for HPCG is the Gflop/s rate based on the apparent number of floating-point operations executed during the benchmark run.
     # Get final results. IMPORTANT: there are more here we could plot
     foms = [float(x.split("=")[-1]) for x in lines if "Final Summary::HPCG result" in x]
-
+    
     # Get the results.
+    durations_seen = False
     while lines:
         line = lines.pop(0)
 
@@ -128,12 +129,16 @@ def parse_flux_jobs(item):
             start = [x for x in events if x["name"] == "shell.start"][0]["timestamp"]
             done = [x for x in events if x["name"] == "done"][0]["timestamp"]
             jobs[study_id]["duration"] = done - start
+            durations_seen = True
 
             assert "FLUX-JOB END" in lines[0]
             lines.pop(0)
 
         # Note that flux job stats are at the end, we don't parse
 
+    if not durations_seen:
+        for job in jobs:
+            jobs[job]['fom'] = foms.pop(0)
     return jobs
 
 
@@ -147,6 +152,7 @@ def add_hpcg_result(p, indir, filename, ebpf=None, gpu=False):
     print(filename)
     env_name = filename.split(os.sep)[-2]
     instance = filename.split(os.sep)[-3]
+    env_name = env_name.replace('-arm', '')
     exp.show()
 
     # Use the env field for the instance type.
@@ -164,6 +170,9 @@ def add_hpcg_result(p, indir, filename, ebpf=None, gpu=False):
         if not metadata:
             continue
         p.add_result("fom", metadata["fom"], env_name)
+        if "duration" not in metadata:
+            print(f'Warning - job duration missing for {filename}')
+            continue
         p.add_result("duration", metadata["duration"], env_name)
     return p
 
@@ -210,7 +219,10 @@ def plot_results(df, outdir, non_anon=False):
     for metric, instances in frames.items():
         for instance, data_frame in instances.items():
             if metric == "compatible":
-                plot_compatible(data_frame, instance, img_outdir)
+                try:
+                    plot_compatible(data_frame, instance, img_outdir)
+                except:
+                    print(f'Issue plotting {instance}')
                 continue
             hue = "optimization"
             fig = plt.figure(figsize=(22, 5))

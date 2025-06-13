@@ -14,8 +14,10 @@ eksctl create cluster --config-file ./cfg/eks-config-t3a-2xlarge.yaml
 eksctl create cluster --config-file ./cfg/eks-config-inf2.8xlarge.yaml
 eksctl create cluster --config-file ./cfg/eks-config-c6a.16xlarge.yaml
 eksctl create cluster --config-file ./cfg/eks-config-hpc7g.16xlarge.yaml
+eksctl create cluster --config-file ./cfg/eks-config-c7g.16xlarge.yaml
 
 aws eks update-kubeconfig --region us-east-2 --name hpcg-test
+aws eks update-kubeconfig --region us-east-1 --name hpcg-test
 ```
 
 Install node feature discovery (so we get node metadata for the hpc6a instance type):
@@ -110,6 +112,7 @@ bash run-study.sh c6i.16xlarge 32
 bash run-study.sh c6id.12xlarge 24
 bash run-study.sh d3.4xlarge 8
 bash run-study-arm.sh hpc7g.16xlarge 64
+bash run-study-arm.sh c7g.16xlarge 64
 ```
 
 ## Clean Up
