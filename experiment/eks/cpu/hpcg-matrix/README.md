@@ -12,7 +12,7 @@ eksctl create cluster --config-file ./cfg/eks-config-m6a.12xlarge.yaml
 eksctl create cluster --config-file ./cfg/eks-config-m6i.12xlarge.yaml
 eksctl create cluster --config-file ./cfg/eks-config-t3a-2xlarge.yaml
 eksctl create cluster --config-file ./cfg/eks-config-inf2.8xlarge.yaml
-
+eksctl create cluster --config-file ./cfg/eks-config-c6a.16xlarge.yaml
 
 aws eks update-kubeconfig --region us-east-2 --name hpcg-test
 ```
@@ -102,6 +102,10 @@ bash run-study.sh m6a.12xlarge 24
 bash run-study.sh m6i.12xlarge 24
 bash run-study.sh t3a.2xlarge 4
 bash run-study.sh inf2.8xlarge 16
+bash run-study.sh c6a.16xlarge 32
+bash run-study.sh c6i.16xlarge 32
+bash run-study.sh c6i.16xlarge 32
+bash run-study.sh c6id.12xlarge 24
 ```
 
 ## Clean Up
@@ -113,4 +117,5 @@ eksctl delete cluster --config-file ./cfg/eks-config-t3-2xlarge.yaml --wait
 eksctl delete cluster --config-file ./cfg/eks-config-m6a.12xlarge.yaml --wait
 eksctl delete cluster --config-file ./cfg/eks-config-m6i.12xlarge.yaml --wait
 eksctl delete cluster --config-file ./cfg/eks-config-t3a-2xlarge.yaml --wait
+eksctl delete cluster --config-file ./cfg/eks-config-inf2.8xlarge.yaml --wait
 ```
