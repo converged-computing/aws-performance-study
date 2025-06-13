@@ -63,6 +63,9 @@ def main():
 def add_ebpf_result(indir, filename, io_counts):
     """
     Add an ebpf result
+    
+    # look at hugepages
+    # plot would be good to have relative increase/decrease
     """
     global db
     global total_counts
