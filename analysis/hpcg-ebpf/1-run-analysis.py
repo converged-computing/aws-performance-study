@@ -237,6 +237,7 @@ def plot_results(df, outdir, non_anon=False):
                 hue=hue,
                 err_kws={"color": "darkred"},
                 order=order,
+                palette=ps.colors,
             )
             if metric in ["duration"]:
                 axes[0].set_title(

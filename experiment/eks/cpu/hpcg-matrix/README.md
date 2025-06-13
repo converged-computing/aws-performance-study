@@ -13,6 +13,7 @@ eksctl create cluster --config-file ./cfg/eks-config-m6i.12xlarge.yaml
 eksctl create cluster --config-file ./cfg/eks-config-t3a-2xlarge.yaml
 eksctl create cluster --config-file ./cfg/eks-config-inf2.8xlarge.yaml
 eksctl create cluster --config-file ./cfg/eks-config-c6a.16xlarge.yaml
+eksctl create cluster --config-file ./cfg/eks-config-hpc7g.16xlarge.yaml
 
 aws eks update-kubeconfig --region us-east-2 --name hpcg-test
 ```
@@ -34,6 +35,7 @@ For the tests below, install the Flux Operator.
 
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/flux-framework/flux-operator/refs/heads/main/examples/dist/flux-operator.yaml
+kubectl apply -f https://raw.githubusercontent.com/flux-framework/flux-operator/refs/heads/main/examples/dist/flux-operator-arm.yaml
 ```
 
 ## Applications
@@ -106,6 +108,8 @@ bash run-study.sh c6a.16xlarge 32
 bash run-study.sh c6i.16xlarge 32
 bash run-study.sh c6i.16xlarge 32
 bash run-study.sh c6id.12xlarge 24
+bash run-study.sh d3.4xlarge 8
+bash run-study-arm.sh hpc7g.16xlarge 64
 ```
 
 ## Clean Up
@@ -118,4 +122,5 @@ eksctl delete cluster --config-file ./cfg/eks-config-m6a.12xlarge.yaml --wait
 eksctl delete cluster --config-file ./cfg/eks-config-m6i.12xlarge.yaml --wait
 eksctl delete cluster --config-file ./cfg/eks-config-t3a-2xlarge.yaml --wait
 eksctl delete cluster --config-file ./cfg/eks-config-inf2.8xlarge.yaml --wait
+...
 ```

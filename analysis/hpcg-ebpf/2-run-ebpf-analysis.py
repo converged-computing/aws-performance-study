@@ -301,6 +301,7 @@ def plot_futex(db, outdir):
             x="experiment",
             y="microseconds",
             hue="optimization",
+            palette=ps.colors,            
             err_kws={"color": "darkred"},
             order=order,
         )
