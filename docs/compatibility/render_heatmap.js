@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const layout = {
         template: "plotly_dark",
         title: {
-            text: `Compatibility Scan: ${instanceName} Sector`,
+            text: `Compatibility Scan: ${instanceName}`,
             font: { color: '#ffffff', size: 20 },
             x: 0.5,
             xanchor: 'center'
