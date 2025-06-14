@@ -1,0 +1,50 @@
+ln: failed to create symbolic link '/mnt/flux/view/lib/python': File exists
+ln: failed to create symbolic link '/mnt/flux/view/lib/python3': File exists
+unlimited
+PROGRAM: cpu
+Looking for /opt/programs/cpu/ebpf-collect.c
+[00:08:19] Waiting for start indicator file: '/mnt/flux/start_ebpf_collection'.
+[00:08:24] Start indicator found. Proceeding with monitoring.
+[00:08:24] Initializing eBPF for CPU Scheduling monitoring...
+[00:08:25] BPF C code compiled and loaded.
+[00:08:25] Attached tracepoints.
+[00:08:25] Monitoring CPU scheduling events (polling aggregated map)... Press Ctrl+C to stop.
+[00:09:41] Stop indicator file '/mnt/flux/stop_ebpf_collection' found. Stopping.
+[00:09:41] Initiating cleanup sequence...
+{
+  "final_aggregated_summary_river": [
+    {
+      "tgid": 1,
+      "comm": "pause",
+      "cgroup_id": 15096,
+      "on_cpu_stats_ns": {
+        "count": 2.0,
+        "sum_ns": 687079.2222222222,
+        "mean_ns": 343539.6111111111,
+        "median_ns": 367837.22222222225,
+        "min_ns": 319242.0,
+        "max_ns": 367837.22222222225,
+        "variance_ns2": 1180747811.4135816,
+        "iqr_ns": 48595.22222222225,
+        "q1_ns": 319242.0,
+        "q3_ns": 367837.22222222225
+      },
+      "runq_latency_stats_ns": {
+        "count": 2.0,
+        "sum_ns": 11117.777777777777,
+        "mean_ns": 5558.888888888889,
+        "median_ns": 8597.777777777777,
+        "min_ns": 2520.0,
+        "max_ns": 8597.777777777777,
+        "variance_ns2": 18469691.35802469,
+        "iqr_ns": 6077.777777777777,
+        "q1_ns": 2520.0,
+        "q3_ns": 8597.777777777777
+      },
+      "first_seen_ts_ns": 1749686955461074015,
+      "last_seen_ts_ns": 1749686981107553500,
+      "duration_active_s": 25.646479485
+    }
+  ]
+}
+[00:09:41] Cleanup complete. Exiting.

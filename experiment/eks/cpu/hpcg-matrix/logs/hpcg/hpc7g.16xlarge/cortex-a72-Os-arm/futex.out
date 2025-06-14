@@ -1,0 +1,62 @@
+ln: failed to create symbolic link '/mnt/flux/view/lib/python': File exists
+ln: failed to create symbolic link '/mnt/flux/view/lib/python3': File exists
+unlimited
+PROGRAM: futex
+Looking for /opt/programs/futex/ebpf-collect.c
+[15:27:46] Starting eBPF (Tracepoints for futex syscalls).
+[15:27:47] BPF program loaded and tracepoints automatically attached.
+[15:27:47] Start Indicator file defined '/mnt/flux/start_ebpf_collection'. Waiting.
+[15:27:47] Start indicator found. Proceeding.
+[15:27:47] Ring buffers opened. Polling for events...
+[15:27:47] 
+Indicator file '/mnt/flux/stop_ebpf_collection' found. Stopping.
+[15:27:47] Cleaning up BPF resources...
+{
+  "final_aggregated_futex_summary_river": [
+    {
+      "tgid": 4796,
+      "comm": "containerd",
+      "cgroup_id": 4085,
+      "wait_duration_stats_ns": {
+        "count": 3.0,
+        "sum": 944177.0,
+        "mean": 314725.6666666667,
+        "median": 324202.0,
+        "min": 280029,
+        "max": 339946,
+        "variance_ns2": 964862392.333333,
+        "iqr_ns": 59917.0,
+        "q1_ns": 280029.0,
+        "q3_ns": 339946.0
+      },
+      "futex_op_counts": {
+        "128": 3
+      },
+      "first_seen_ts_ns": 2102753955162,
+      "last_seen_ts_ns": 2102753972260
+    },
+    {
+      "tgid": 51722,
+      "comm": "containerd-shim",
+      "cgroup_id": 4085,
+      "wait_duration_stats_ns": {
+        "count": 2.0,
+        "sum": 625883.0,
+        "mean": 312941.5,
+        "median": 359347.0,
+        "min": 266536,
+        "max": 359347,
+        "variance_ns2": 4306940860.5,
+        "iqr_ns": 92811.0,
+        "q1_ns": 266536.0,
+        "q3_ns": 359347.0
+      },
+      "futex_op_counts": {
+        "128": 2
+      },
+      "first_seen_ts_ns": 2102753920702,
+      "last_seen_ts_ns": 2102753936150
+    }
+  ]
+}
+[15:27:47] Cleanup complete.
