@@ -1,0 +1,17 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: hpcg-test
+  region: us-east-1
+  version: "1.32"
+
+availabilityZones: ["us-east-1a", "us-east-1b", "us-east-1c"]
+managedNodeGroups:
+  - name: workers
+    availabilityZones: ["us-east-1a"]
+    instanceType: hpc7g.16xlarge
+    volumeSize: 150
+    volumeType: gp2
+    minSize: 1
+    maxSize: 1
