@@ -6,6 +6,8 @@ import sys
 import pandas
 import json
 
+from scipy.cluster.hierarchy import linkage, dendrogram
+from scipy.spatial.distance import pdist
 import matplotlib.pylab as plt
 import seaborn as sns
 
@@ -18,12 +20,29 @@ import performance_study as ps
 
 sns.set_theme(style="whitegrid", palette="muted")
 
-# These are files I found erroneous - no result, or incomplete result
-# Details included with each, and more exploration is likely needed to quantify
-# error types
-errors = []
-error_regex = "(%s)" % "|".join(errors)
 
+# Keep final json structure of compats so we can make a web interface
+compats = {
+  # Let's do this ABC so it's easier to lookup
+  "instance_names": set(),
+  "instances": {},
+}
+
+arches_lookup = {
+    "c6a.16xlarge": "AMD EPYC 7R13 x86_64",
+    "c6i.16xlarge": "Intel Xeon 8375C (Ice Lake)",
+    "c6id.12xlarge": "Intel Xeon 8375C (Ice Lake)",  # 'i' for Intel, 'd' for local NVMe
+    "c6in.12xlarge": "Intel Xeon 8375C (Ice Lake)",  # 'i' for Intel, 'n' for network
+    "c7g.16xlarge": "AWS Graviton3 ARM",
+    "d3.4xlarge": "Intel Xeon Platinum 8259 (Cascade Lake)",     # Storage-optimized, typically Intel
+    "hpc6a.48xlarge": "AMD EPYC 7R13 x86_64",
+    "hpc7g.16xlarge": "AWS Graviton3 ARM",
+    "inf2.8xlarge": "AMD EPYC 7R13 x86_64",
+    "m6a.12xlarge": "AMD EPYC 7R13 x86_64",
+    "m6i.12xlarge": "Intel Xeon 8375C (Ice Lake)",
+    "t3.2xlarge": "Intel Skylake E5 2686 v5",
+    "t3a.2xlarge": "AMD EPYC 7571 x86_64"
+}
 
 def get_parser():
     parser = argparse.ArgumentParser(
@@ -53,6 +72,7 @@ def main():
     """
     Find application result files to parse.
     """
+    global compats
     parser = get_parser()
     args, _ = parser.parse_known_args()
 
@@ -70,77 +90,23 @@ def main():
     # Saves raw data to file
     df = parse_data(indir, outdir, files)
     plot_results(df, outdir, args.non_anon)
-
-
-def parse_flux_jobs(item):
-    """
-    Parse flux jobs. We first find output, then logs and events
-    """
-    jobs = {}
-    current_job = None
-    jobid = None
-    lines = item.split("\n")
-
-    # FOM for HPCG is the Gflop/s rate based on the apparent number of floating-point operations executed during the benchmark run.
-    # Get final results. IMPORTANT: there are more here we could plot
-    foms = [float(x.split("=")[-1]) for x in lines if "Final Summary::HPCG result" in x]
     
-    # Get the results.
-    durations_seen = False
-    while lines:
-        line = lines.pop(0)
+    # Save final interface for compats
+    compats['instance_names'] = list(compats['instance_names'])
+    ps.write_json(compats, os.path.join(outdir, 'compatibility_data.json'))
 
-        # This is the start of a job
-        if "FLUX-RUN START" in line and "echo" not in line:
-            jobid = line.split(" ")[-1]
-            current_job = []
-            jobs[jobid] = {}
-        # This is the end of a job
-        elif "FLUX-RUN END" in line and "echo" not in line:
-            jobs[jobid]["log"] = "\n".join(current_job)
-            jobid = None
-        elif jobid is not None:
-            current_job.append(line)
-            continue
-
-    lines = item.split("\n")
-    while lines:
-        line = lines.pop(0)
-
-        # Here, study id is job id above (e.g. amg2023-iter-1)
-        if "FLUX-JOB START" in line and "echo" not in line:
-            jobid, study_id = line.split(" ")[-2:]
-            # I shelled in and ran hostname for osu, oops
-            if study_id == "null":
-                ps.find_section(lines, "FLUX-JOB-JOBSPEC")
-                ps.find_section(lines, "FLUX-JOB-RESOURCES")
-                ps.find_section(lines, "FLUX-JOB-EVENTLOG")
-                continue
-            jobs[study_id]["fluxid"] = jobid
-            jobspec, lines = ps.find_section(lines, "FLUX-JOB-JOBSPEC")
-            jobs[study_id]["jobspec"] = jobspec
-            jobs[study_id]["fom"] = foms.pop(0)
-            resources, lines = ps.find_section(lines, "FLUX-JOB-RESOURCES")
-            jobs[study_id]["resources"] = resources
-            events, lines = ps.find_section(lines, "FLUX-JOB-EVENTLOG")
-            jobs[study_id]["events"] = events
-
-            # Calculate duration
-            start = [x for x in events if x["name"] == "shell.start"][0]["timestamp"]
-            done = [x for x in events if x["name"] == "done"][0]["timestamp"]
-            jobs[study_id]["duration"] = done - start
-            durations_seen = True
-
-            assert "FLUX-JOB END" in lines[0]
-            lines.pop(0)
-
-        # Note that flux job stats are at the end, we don't parse
-
-    if not durations_seen:
-        for job in jobs:
-            jobs[job]['fom'] = foms.pop(0)
-    return jobs
-
+def get_ordered_matrix_and_labels(df_matrix):
+    """
+    We need to get clustering and labels without clustermap.
+    """
+    row_linkage = linkage(pdist(df_matrix.values, metric='jaccard'), method='ward')
+    row_order_indices = dendrogram(row_linkage, no_plot=True)['leaves']
+    ordered_rows = df_matrix.index[row_order_indices].tolist()
+    col_linkage = linkage(pdist(df_matrix.T.values, metric='jaccard'), method='ward')
+    col_order_indices = dendrogram(col_linkage, no_plot=True)['leaves']
+    ordered_cols = df_matrix.columns[col_order_indices].tolist()
+    df_ordered = df_matrix.loc[ordered_rows, ordered_cols]
+    return df_ordered.values.tolist(), ordered_rows, ordered_cols
 
 def add_hpcg_result(p, indir, filename, ebpf=None, gpu=False):
     """
@@ -164,16 +130,14 @@ def add_hpcg_result(p, indir, filename, ebpf=None, gpu=False):
         p.add_result("compatible", False, env_name)
         return p
     p.add_result("compatible", True, env_name)
-
-    jobs = parse_flux_jobs(item)
-    for _, metadata in jobs.items():
-        if not metadata:
-            continue
-        p.add_result("fom", metadata["fom"], env_name)
-        if "duration" not in metadata:
-            print(f'Warning - job duration missing for {filename}')
-            continue
-        p.add_result("duration", metadata["duration"], env_name)
+    
+    # Get the benchmark total times and FOMs (each of these is an iteration, should be 3)
+    lines = item.split('\n')
+    times = [float(x.split('=')[-1]) for x in lines if "Benchmark Time Summary::Total" in x]
+    foms = [float(x.split("=")[-1]) for x in lines if "Final Summary::HPCG result" in x]
+    for i, duration in enumerate(times):
+        p.add_result("fom", foms[i], env_name)
+        p.add_result("duration", duration, env_name)
     return p
 
 
@@ -199,8 +163,10 @@ def plot_results(df, outdir, non_anon=False):
     Plot analysis results
     """
     img_outdir = os.path.join(outdir, "img")
-    if not os.path.exists(img_outdir):
-        os.makedirs(img_outdir)
+    for path in ["fom", "duration", "compatibility"]:
+        path = os.path.join(img_outdir, path)
+        if not os.path.exists(path):
+            os.makedirs(path)
 
     df["optimization"] = [x.split("-")[-1] for x in df.problem_size.tolist()]
 
@@ -219,10 +185,7 @@ def plot_results(df, outdir, non_anon=False):
     for metric, instances in frames.items():
         for instance, data_frame in instances.items():
             if metric == "compatible":
-                try:
-                    plot_compatible(data_frame, instance, img_outdir)
-                except:
-                    print(f'Issue plotting {instance}')
+                plot_compatible(data_frame, instance, os.path.join(img_outdir, "compatibility"))
                 continue
             hue = "optimization"
             fig = plt.figure(figsize=(22, 5))
@@ -276,8 +239,7 @@ def plot_results(df, outdir, non_anon=False):
                 ax.get_legend().remove()
             axes[1].axis("off")
             plt.tight_layout()
-            plt.savefig(os.path.join(img_outdir, f"xhpcg-{instance}-{metric}.svg"))
-            # plt.savefig(os.path.join(img_outdir, f"xhpcg-{instance}-{metric}.png"))
+            plt.savefig(os.path.join(img_outdir, metric, f"xhpcg-{instance}-{metric}.svg"))
             plt.clf()
 
             # Print the total number of data points
@@ -288,6 +250,7 @@ def plot_compatible(df, instance, img_outdir):
     """
     Plot compatibility matrix
     """
+    global compats
     optims = list(set([x.split("-")[-1] for x in df.problem_size.unique().tolist()]))
     microarches = list(
         set([x.rsplit("-", 1)[0] for x in df.problem_size.unique().tolist()])
@@ -295,6 +258,7 @@ def plot_compatible(df, instance, img_outdir):
     microarches.sort()
     optims.sort()
     compat_df = pandas.DataFrame(0, columns=microarches, index=optims)
+    compats['instance_names'].add(instance)
 
     # Fill it in!
     for idx, row in df.iterrows():
@@ -302,6 +266,15 @@ def plot_compatible(df, instance, img_outdir):
             arch, optim = row.problem_size.rsplit("-", 1)
             compat_df.loc[optim, arch] = 1
 
+    ordered_df, rows, cols = get_ordered_matrix_and_labels(compat_df)
+
+    # Add to global set
+    compats['instances'][instance] = {
+        "heatmap": ordered_df,
+        "optimizations": rows,
+        "microarches": cols,
+        "platform": arches_lookup[instance],
+    }    
     fig = plt.figure(figsize=(12, 8))
     axes = []
     gs = plt.GridSpec(1, 2, width_ratios=[7, 0])
@@ -318,7 +291,6 @@ def plot_compatible(df, instance, img_outdir):
     plt.ylabel("Optimization")
     plt.tight_layout()
     plt.savefig(os.path.join(img_outdir, f"xhpcg-optimization-{instance}.svg"))
-    plt.savefig(os.path.join(img_outdir, f"xhpcg-optimization-{instance}.png"))
     plt.clf()
 
 

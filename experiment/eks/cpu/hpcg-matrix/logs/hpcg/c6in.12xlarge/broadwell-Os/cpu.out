@@ -1,0 +1,272 @@
+unlimited
+PROGRAM: cpu
+Looking for /opt/programs/cpu/ebpf-collect.c
+[02:35:30] Waiting for start indicator file: '/mnt/flux/start_ebpf_collection'.
+[02:35:31] Start indicator found. Proceeding with monitoring.
+[02:35:31] Initializing eBPF for CPU Scheduling monitoring...
+[02:35:31] BPF C code compiled and loaded.
+[02:35:31] Attached tracepoints.
+[02:35:31] Monitoring CPU scheduling events (polling aggregated map)... Press Ctrl+C to stop.
+[02:36:25] Stop indicator file '/mnt/flux/stop_ebpf_collection' found. Stopping.
+[02:36:25] Initiating cleanup sequence...
+{
+  "final_aggregated_summary_river": [
+    {
+      "tgid": 250,
+      "comm": "python3",
+      "cgroup_id": 68692,
+      "on_cpu_stats_ns": {
+        "count": 94.0,
+        "sum_ns": 13743005.664399846,
+        "mean_ns": 146202.18791914728,
+        "median_ns": 36094.54609614656,
+        "min_ns": 3893.217391304348,
+        "max_ns": 6516284.333333333,
+        "variance_ns2": 460588966254.21234,
+        "iqr_ns": 23249.24344909498,
+        "q1_ns": 9590.86285859315,
+        "q3_ns": 32840.10630768813
+      },
+      "runq_latency_stats_ns": {
+        "count": 94.0,
+        "sum_ns": 3070735.8398358296,
+        "mean_ns": 32667.402551444997,
+        "median_ns": 4613.727345403034,
+        "min_ns": 963.0,
+        "max_ns": 767076.0,
+        "variance_ns2": 13064982345.388582,
+        "iqr_ns": 11409.505431898473,
+        "q1_ns": 2415.900171742907,
+        "q3_ns": 13825.40560364138
+      },
+      "first_seen_ts_ns": 1749868532104152309,
+      "last_seen_ts_ns": 1749868583476306284,
+      "duration_active_s": 51.372153975
+    },
+    {
+      "tgid": 202,
+      "comm": "python3",
+      "cgroup_id": 68622,
+      "on_cpu_stats_ns": {
+        "count": 258.0,
+        "sum_ns": 6789350.574393939,
+        "mean_ns": 26315.31230385248,
+        "median_ns": 15960.802303690001,
+        "min_ns": 1556.3333333333333,
+        "max_ns": 464871.0,
+        "variance_ns2": 2346081749.3345094,
+        "iqr_ns": 10954.28546130526,
+        "q1_ns": 9387.764894298447,
+        "q3_ns": 20342.050355603707
+      },
+      "runq_latency_stats_ns": {
+        "count": 257.0,
+        "sum_ns": 2757931.5426262636,
+        "mean_ns": 10731.251138623593,
+        "median_ns": 7645.132391340405,
+        "min_ns": 579.5,
+        "max_ns": 284847.0,
+        "variance_ns2": 356265578.7187783,
+        "iqr_ns": 12548.72760453502,
+        "q1_ns": 3481.1982287613514,
+        "q3_ns": 16029.925833296373
+      },
+      "first_seen_ts_ns": 1749868531994667167,
+      "last_seen_ts_ns": 1749868584999245804,
+      "duration_active_s": 53.004578637
+    },
+    {
+      "tgid": 143,
+      "comm": "flux-broker-0",
+      "cgroup_id": 68762,
+      "on_cpu_stats_ns": {
+        "count": 124.0,
+        "sum_ns": 2939987.3283333336,
+        "mean_ns": 23709.575228494625,
+        "median_ns": 14768.693552141633,
+        "min_ns": 3087.0,
+        "max_ns": 190771.0,
+        "variance_ns2": 971314474.8308842,
+        "iqr_ns": 6066.139871163194,
+        "q1_ns": 8537.167214911555,
+        "q3_ns": 14603.307086074748
+      },
+      "runq_latency_stats_ns": {
+        "count": 124.0,
+        "sum_ns": 1726517.8849999998,
+        "mean_ns": 13923.531330645159,
+        "median_ns": 7571.377237367805,
+        "min_ns": 575.0,
+        "max_ns": 673225.0,
+        "variance_ns2": 3607059648.275363,
+        "iqr_ns": 7775.710021088176,
+        "q1_ns": 2752.391439765574,
+        "q3_ns": 10528.10146085375
+      },
+      "first_seen_ts_ns": 1749868532104152309,
+      "last_seen_ts_ns": 1749868583476306284,
+      "duration_active_s": 51.372153975
+    },
+    {
+      "tgid": 31,
+      "comm": "bash",
+      "cgroup_id": 68622,
+      "on_cpu_stats_ns": {
+        "count": 17.0,
+        "sum_ns": 928370.5000000001,
+        "mean_ns": 54610.02941176471,
+        "median_ns": 27689.74751733662,
+        "min_ns": 2714.5,
+        "max_ns": 190415.0,
+        "variance_ns2": 3048077691.014706,
+        "iqr_ns": 71724.61055702527,
+        "q1_ns": 13191.06163580247,
+        "q3_ns": 84915.67219282774
+      },
+      "runq_latency_stats_ns": {
+        "count": 17.0,
+        "sum_ns": 928874.5000000001,
+        "mean_ns": 54639.676470588245,
+        "median_ns": 1893.6865821139231,
+        "min_ns": 575.5,
+        "max_ns": 805994.0,
+        "variance_ns2": 37619437724.24816,
+        "iqr_ns": 12697.662849121094,
+        "q1_ns": 1765.8371508789062,
+        "q3_ns": 14463.5
+      },
+      "first_seen_ts_ns": 1749868532499139639,
+      "last_seen_ts_ns": 1749868584999245804,
+      "duration_active_s": 52.500106165
+    },
+    {
+      "tgid": 311,
+      "comm": "xhpcg",
+      "cgroup_id": 68762,
+      "on_cpu_stats_ns": {
+        "count": 47.0,
+        "sum_ns": 497529.92976190476,
+        "mean_ns": 10585.743186423506,
+        "median_ns": 10830.732594885383,
+        "min_ns": 3657.0,
+        "max_ns": 20161.14285714286,
+        "variance_ns2": 16500943.044210646,
+        "iqr_ns": 5541.301544468924,
+        "q1_ns": 8080.071185877719,
+        "q3_ns": 13621.372730346642
+      },
+      "runq_latency_stats_ns": {
+        "count": 47.0,
+        "sum_ns": 219403.7916666667,
+        "mean_ns": 4668.165780141844,
+        "median_ns": 4615.851604841564,
+        "min_ns": 656.2857142857143,
+        "max_ns": 10799.125,
+        "variance_ns2": 5228647.537740527,
+        "iqr_ns": 4169.519192548449,
+        "q1_ns": 2317.6077626438578,
+        "q3_ns": 6487.126955192307
+      },
+      "first_seen_ts_ns": 1749868534038693907,
+      "last_seen_ts_ns": 1749868544178939973,
+      "duration_active_s": 10.140246066
+    },
+    {
+      "tgid": 1,
+      "comm": "pause",
+      "cgroup_id": 68412,
+      "on_cpu_stats_ns": {
+        "count": 2.0,
+        "sum_ns": 410949.55555555556,
+        "mean_ns": 205474.77777777778,
+        "median_ns": 224963.0,
+        "min_ns": 185986.55555555556,
+        "max_ns": 224963.0,
+        "variance_ns2": 759581610.7654319,
+        "iqr_ns": 38976.44444444444,
+        "q1_ns": 185986.55555555556,
+        "q3_ns": 224963.0
+      },
+      "runq_latency_stats_ns": {
+        "count": 2.0,
+        "sum_ns": 14616.777777777777,
+        "mean_ns": 7308.388888888889,
+        "median_ns": 8389.0,
+        "min_ns": 6227.777777777777,
+        "max_ns": 8389.0,
+        "variance_ns2": 2335440.746913581,
+        "iqr_ns": 2161.2222222222226,
+        "q1_ns": 6227.777777777777,
+        "q3_ns": 8389.0
+      },
+      "first_seen_ts_ns": 1749868536103809784,
+      "last_seen_ts_ns": 1749868585406217120,
+      "duration_active_s": 49.302407336
+    },
+    {
+      "tgid": 309,
+      "comm": "xhpcg",
+      "cgroup_id": 68762,
+      "on_cpu_stats_ns": {
+        "count": 21.0,
+        "sum_ns": 368712.0,
+        "mean_ns": 17557.714285714286,
+        "median_ns": 17120.13749255952,
+        "min_ns": 5494.0,
+        "max_ns": 33599.0,
+        "variance_ns2": 55656872.014285706,
+        "iqr_ns": 10090.17552467517,
+        "q1_ns": 12311.947025462963,
+        "q3_ns": 22402.122550138134
+      },
+      "runq_latency_stats_ns": {
+        "count": 21.0,
+        "sum_ns": 287437.00000000006,
+        "mean_ns": 13687.476190476193,
+        "median_ns": 5456.4625,
+        "min_ns": 825.0,
+        "max_ns": 159363.0,
+        "variance_ns2": 1139789295.461905,
+        "iqr_ns": 4542.53376792394,
+        "q1_ns": 3780.1336895166055,
+        "q3_ns": 8322.667457440546
+      },
+      "first_seen_ts_ns": 1749868532833818939,
+      "last_seen_ts_ns": 1749868543132974015,
+      "duration_active_s": 10.299155076
+    },
+    {
+      "tgid": 65,
+      "comm": "bash",
+      "cgroup_id": 68762,
+      "on_cpu_stats_ns": {
+        "count": 19.0,
+        "sum_ns": 266072.8430769231,
+        "mean_ns": 14003.833846153848,
+        "median_ns": 15611.628482975759,
+        "min_ns": 4177.423076923077,
+        "max_ns": 24759.0,
+        "variance_ns2": 43748550.094589606,
+        "iqr_ns": 11133.989302785692,
+        "q1_ns": 9598.524466292452,
+        "q3_ns": 20732.513769078145
+      },
+      "runq_latency_stats_ns": {
+        "count": 19.0,
+        "sum_ns": 186171.87538461544,
+        "mean_ns": 9798.519757085023,
+        "median_ns": 7056.575863450897,
+        "min_ns": 1128.72,
+        "max_ns": 21258.0,
+        "variance_ns2": 53746875.98327633,
+        "iqr_ns": 13674.730822475749,
+        "q1_ns": 2241.933556547619,
+        "q3_ns": 15916.664379023368
+      },
+      "first_seen_ts_ns": 1749868531994667167,
+      "last_seen_ts_ns": 1749868583374644022,
+      "duration_active_s": 51.379976855
+    }
+  ]
+}
+[02:36:25] Cleanup complete. Exiting.
