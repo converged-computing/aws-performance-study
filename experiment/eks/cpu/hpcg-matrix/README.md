@@ -22,6 +22,8 @@ eksctl create cluster --config-file ./cfg/eks-config-m6g.12xlarge.yaml
 eksctl create cluster --config-file ./cfg/eks-config-m6id.12xlarge.yaml
 eksctl create cluster --config-file ./cfg/eks-config-m7g.16xlarge.yaml
 eksctl create cluster --config-file ./cfg/eks-config-r6a.12xlarge.yaml
+eksctl create cluster --config-file ./cfg/eks-config-t4g.2xlarge.yaml
+eksctl create cluster --config-file ./cfg/eks-config-r7iz.8xlarge.yaml
 
 aws eks update-kubeconfig --region us-east-2 --name hpcg-test
 aws eks update-kubeconfig --region us-east-1 --name hpcg-test
@@ -115,7 +117,6 @@ bash run-study.sh t3a.2xlarge 4
 bash run-study.sh inf2.8xlarge 16
 bash run-study.sh c6a.16xlarge 32
 bash run-study.sh c6i.16xlarge 32
-bash run-study.sh c6i.16xlarge 32
 bash run-study.sh c6id.12xlarge 24
 bash run-study.sh d3.4xlarge 8
 bash run-study-arm.sh hpc7g.16xlarge 64
@@ -127,6 +128,8 @@ bash run-study-arm.sh m6g.12xlarge 48
 bash run-study.sh m6id.12xlarge 24
 bash run-study-arm.sh m7g.16xlarge 64
 bash run-study.sh r6a.12xlarge 24
+bash run-study-arm.sh t4g.2xlarge 8
+bash run-study.sh r7iz.8xlarge 16
 ```
 
 ## Clean Up

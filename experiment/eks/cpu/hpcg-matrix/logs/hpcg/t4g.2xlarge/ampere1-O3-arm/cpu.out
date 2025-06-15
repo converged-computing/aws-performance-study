@@ -1,0 +1,48 @@
+unlimited
+PROGRAM: cpu
+Looking for /opt/programs/cpu/ebpf-collect.c
+[13:51:58] Waiting for start indicator file: '/mnt/flux/start_ebpf_collection'.
+[13:52:04] Start indicator found. Proceeding with monitoring.
+[13:52:04] Initializing eBPF for CPU Scheduling monitoring...
+[13:52:05] BPF C code compiled and loaded.
+[13:52:05] Attached tracepoints.
+[13:52:05] Monitoring CPU scheduling events (polling aggregated map)... Press Ctrl+C to stop.
+[13:52:59] Stop indicator file '/mnt/flux/stop_ebpf_collection' found. Stopping.
+[13:52:59] Initiating cleanup sequence...
+{
+  "final_aggregated_summary_river": [
+    {
+      "tgid": 1,
+      "comm": "pause",
+      "cgroup_id": 28616,
+      "on_cpu_stats_ns": {
+        "count": 2.0,
+        "sum_ns": 706330.6031746031,
+        "mean_ns": 353165.30158730154,
+        "median_ns": 469587.71428571426,
+        "min_ns": 236742.88888888888,
+        "max_ns": 469587.71428571426,
+        "variance_ns2": 27108356357.039055,
+        "iqr_ns": 232844.82539682538,
+        "q1_ns": 236742.88888888888,
+        "q3_ns": 469587.71428571426
+      },
+      "runq_latency_stats_ns": {
+        "count": 2.0,
+        "sum_ns": 5585.269841269841,
+        "mean_ns": 2792.6349206349205,
+        "median_ns": 4216.555555555556,
+        "min_ns": 1368.7142857142858,
+        "max_ns": 4216.555555555556,
+        "variance_ns2": 4055099.9491055678,
+        "iqr_ns": 2847.84126984127,
+        "q1_ns": 1368.7142857142858,
+        "q3_ns": 4216.555555555556
+      },
+      "first_seen_ts_ns": 1749995537483460267,
+      "last_seen_ts_ns": 1749995579437676497,
+      "duration_active_s": 41.95421623
+    }
+  ]
+}
+[13:52:59] Cleanup complete. Exiting.
