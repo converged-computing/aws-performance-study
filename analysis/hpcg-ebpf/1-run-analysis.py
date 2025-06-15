@@ -45,6 +45,7 @@ arches_lookup = {
     "m6g.12xlarge": "AWS Graviton2 ARM",
     "c7a.12xlarge": "AMD EPYC 9R14 x86_64",
     "i4i.8xlarge": "Intel Xeon 8375C (Ice Lake)",
+    "m6id.12xlarge": "Intel Xeon 8375C (Ice Lake)",
 }
 
 def get_parser():
@@ -56,12 +57,6 @@ def get_parser():
         "--root",
         help="root directory with experiments",
         default=os.path.join(root, "experiment"),
-    )
-    parser.add_argument(
-        "--non-anon",
-        help="Generate non-anon",
-        action="store_true",
-        default=False,
     )
     parser.add_argument(
         "--out",
@@ -92,7 +87,7 @@ def main():
 
     # Saves raw data to file
     df = parse_data(indir, outdir, files)
-    plot_results(df, outdir, args.non_anon)
+    plot_results(df, outdir)
     
     # Save final interface for compats
     compats['instance_names'] = list(compats['instance_names'])
@@ -161,7 +156,7 @@ def parse_data(indir, outdir, files):
     return p.df
 
 
-def plot_results(df, outdir, non_anon=False):
+def plot_results(df, outdir):
     """
     Plot analysis results
     """
