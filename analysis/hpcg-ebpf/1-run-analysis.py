@@ -46,6 +46,8 @@ arches_lookup = {
     "c7a.12xlarge": "AMD EPYC 9R14 x86_64",
     "i4i.8xlarge": "Intel Xeon 8375C (Ice Lake)",
     "m6id.12xlarge": "Intel Xeon 8375C (Ice Lake)",
+    "r6a.12xlarge": "AMD EPYC 7R13 X86_64",
+    "m7g.16xlarge": "AWS Graviton3 ARM",
 }
 
 def get_parser():
