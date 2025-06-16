@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HPC Mission Control</title>
+    <!-- Load Plotly.js from a CDN -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- Load a futuristic font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        /* --- Base Theme --- */
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            margin: 0;
+            padding: 2em;
+            color: #d0d0d0;
+            background-color: #030815; /* Deep space blue */
+            background-image: url('https://www.transparenttextures.com/patterns/stardust.png'); /* Subtle starfield texture */
+            background-attachment: fixed;
+        }
+
+        /* --- Page Header --- */
+        .header {
+            text-align: center;
+            margin-bottom: 2em;
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #ffffff;
+            text-shadow: 0 0 5px #00c6ff, 0 0 10px #00c6ff, 0 0 20px #00c6ff;
+        }
+        .subtitle {
+            font-size: 1.2em;
+            color: #00c6ff;
+            letter-spacing: 2px;
+        }
+
+        /* --- Dashboard Layout --- */
+        .dashboard-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+        }
+
+        /* --- Panel Styling (The "Frosted Glass" effect) --- */
+        .panel {
+            flex: 1;
+            min-width: 600px;
+            background: rgba(10, 20, 40, 0.7); /* Semi-transparent dark blue */
+            border: 1px solid #00c6ff;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 198, 255, 0.4), inset 0 0 10px rgba(0, 198, 255, 0.2);
+            padding: 25px;
+            
+            /* The "frosted glass" effect for modern browsers */
+            -webkit-backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px);
+        }
+
+        .panel h2 {
+            margin-top: 0;
+            color: #00ffae;
+            text-shadow: 0 0 5px rgba(0, 255, 174, 0.7);
+        }
+        
+        /* --- Controls Styling --- */
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .controls label {
+            font-size: 1.1em;
+            color: #00ffae;
+            cursor: pointer;
+        }
+        select, input {
+            font-family: 'Share Tech Mono', monospace;
+            background-color: rgba(0,0,0,0.5);
+            color: #d0d0d0;
+            border: 1px solid #00c6ff;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        select:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 198, 255, 0.7);
+        }
+        /* Custom radio button appearance */
+        input[type="radio"] {
+            appearance: none;
+            width: 1.2em;
+            height: 1.2em;
+            border: 2px solid #00c6ff;
+            border-radius: 50%;
+            vertical-align: middle;
+            transition: all 0.2s ease-in-out;
+        }
+        input[type="radio"]:checked {
+            background-color: #00ffae;
+            box-shadow: 0 0 10px #00ffae;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>HPC Mission Control</h1>
+        <div class="subtitle">Compatibility & Performance Telemetry</div>
+    </div>
+
+    <div class="dashboard-container">
+        <!-- Left Panel: Controls and 2D Heatmap -->
+        <div class="panel" id="panel-2d">
+            <h2>System Analysis Matrix [2D]</h2>
+            <div class="controls">
+                <label for="instance-slicer">Target System:</label>
+                <select id="instance-slicer"></select>
+            </div>
+            <div class="controls">
+                <label>Telemetry:</label>
+                <label><input type="radio" name="metric" value="works" checked> Compatibility</label>
+                <label><input type="radio" name="metric" value="fom"> FOM</label>
+                <label><input type="radio" name="metric" value="cpu_time"> CPU Time</label>
+            </div>
+            <div id="plot2d"></div>
+        </div>
+
+        <!-- Right Panel: 3D Scatter Plot -->
+        <div class="panel" id="panel-3d">
+            <h2>Performance Constellation [3D]</h2>
+            <div id="plot3d"></div>
+        </div>
+    </div>
+
+    <!-- Your custom script (UNCHANGED from previous answer) -->
+    <script src="script.js"></script>
+</body>
+</html>

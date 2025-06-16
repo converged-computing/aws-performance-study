@@ -77,6 +77,30 @@ core_lookup = {
     "r6a.12xlarge": 24,
 }
 
+proc_lookup = {
+    "hpc7g.16xlarge": 64,
+    "m7g.16xlarge": 64,
+    "c7g.16xlarge": 64,
+    "m6g.12xlarge": 48,
+    "t4g.2xlarge": 8,
+    "c7a.12xlarge": 48,
+    "t3.2xlarge": 4,
+    "c6in.12xlarge": 24,
+    "i4i.8xlarge": 16,
+    "r6i.8xlarge": 16,
+    "m6i.12xlarge": 24,
+    "r7iz.8xlarge": 16,
+    "c6i.16xlarge": 32,
+    "d3.4xlarge": 8,
+    "c6id.12xlarge": 24,
+    "m6id.12xlarge": 24,
+    "t3a.2xlarge": 4,
+    "hpc6a.48xlarge": 96,
+    "c6a.16xlarge": 32,
+    "m6a.12xlarge": 24,
+    "r6a.12xlarge": 24,
+}
+
 cost_lookup = {
     "c6a.16xlarge": 2.448,
     "c6i.16xlarge": 2.72,
@@ -342,7 +366,7 @@ def parse_metrics(indir, outdir, files):
                 continue
             # Divide by the number of procs of the instance type
             if metric in divide_by_n:
-                value = float(row.value) / core_lookup[row.env]
+                value = float(row.value) / proc_lookup[row.env]
             elif metric in raw_values:
                 value = float(row.value)
             elif metric in divide_by_iterations:

@@ -6,51 +6,76 @@
     <title>HPCG Performance Visualization - Galactic Edition</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
-        .portal-home-link {
+      .top-navigation-links {
             position: fixed;
-            top: 20px;
-            left: 20px;
+            top: 15px; /* Adjusted slightly */
+            left: 15px;
             z-index: 1000;
-            display: flex; /* Align icon and text horizontally */
-            align-items: center; /* Vertically align icon and text */
-            padding: 8px 12px; /* Adjust padding for text */
+            display: flex; /* Arrange buttons side-by-side */
+            gap: 10px; /* Space between buttons */
+        }
+
+        /* --- GENERIC NAVIGATION BUTTON STYLES --- */
+        .nav-button {
+            display: flex;
+            align-items: center;
+            padding: 8px 15px; /* Uniform padding */
             border-radius: 20px; /* Pill shape */
             text-decoration: none;
-            background-color: rgba(20, 30, 55, 0.6); /* Subtle background like controls */
-            border: 1px solid #2a3b60; /* Subtle border */
+            background-color: rgba(30, 45, 70, 0.7); /* Slightly different base */
+            border: 1px solid #3a5070; /* Slightly different border */
             transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
-        .portal-home-link svg {
-            display: block;
-            width: 22px; /* Adjusted SVG size */
-            height: 22px;
-            color: #FFD700; /* Gold/Yellow star color */
-            margin-right: 8px; /* Space between star and text */
-            transition: transform 0.3s ease; /* For hover effect on star only */
+        .nav-button:hover {
+            background-color: rgba(52, 79, 116, 0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .nav-button:active {
+            transform: translateY(0px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
-        .portal-home-text {
-            font-family: 'Orbitron', sans-serif; /* Sci-fi font for portal text */
-            font-size: 0.9em; /* Adjust as needed */
-            color: #ddeeff; /* Light text color */
+        .nav-button-icon {
+            display: inline-block; /* Or block if SVG is direct child */
+            margin-right: 8px;
+            transition: transform 0.3s ease;
+        }
+        .nav-button:hover .nav-button-icon { /* Common hover for icons */
+             /* transform: scale(1.1); // General icon scale if desired */
+        }
+
+        .nav-button-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9em;
+            color: #ddeeff;
             font-weight: 500;
-            white-space: nowrap; /* Prevent text from wrapping */
+            white-space: nowrap;
         }
 
-        .portal-home-link:hover {
-            background-color: rgba(42, 59, 96, 0.8); /* Darker background on hover */
-            transform: translateY(-2px); /* Slight lift effect */
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        /* --- SCATTER LINK SPECIFIC ICON --- */
+        .scatter-link .nav-button-icon.scatter {
+            width: 14px; /* Size of the circle */
+            height: 14px;
+            background-color: #64FFDA; /* Teal/Aqua color for scatter plot icon */
+            border-radius: 50%; /* Make it a circle */
+            align-self: center; /* Ensure vertical centering within flex button */
+        }
+        .scatter-link:hover .nav-button-icon.scatter {
+            transform: scale(1.2); /* Make circle slightly bigger on hover */
         }
 
-        .portal-home-link:hover svg {
-            transform: rotate(25deg) scale(1.1); /* Rotate and scale star on link hover */
-        }
 
-        .portal-home-link:active {
-            transform: translateY(0px); /* Push back down on click */
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        /* --- PORTAL LINK SPECIFIC ICON (STAR) --- */
+        .portal-link .nav-button-icon.star { /* For the SVG star */
+            width: 22px;
+            height: 22px;
+            color: #FFD700; /* Yellow star color */
+        }
+        .portal-link:hover .nav-button-icon.star {
+            transform: rotate(25deg) scale(1.1);
         }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -212,12 +237,18 @@
     </style>
 </head>
 <body>
-    <a href="../" class="portal-home-link" title="Back to Cosmic HPCG Navigator">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="28px" height="28px"> {/* Slightly smaller star */}
-            <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279L12 19.445l-7.416 3.964L6.064 15.134 0 9.306l8.332-1.151L12 .587z"/>
-        </svg>
-        <span class="portal-home-text">Galaxy Portal</span>
-    </a>
+    <div class="top-navigation-links">
+        <a href="../hpcg_portal.html" class="nav-button portal-link" title="Back to Cosmic HPCG Navigator">
+            <svg class="nav-button-icon star" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279L12 19.445l-7.416 3.964L6.064 15.134 0 9.306l8.332-1.151L12 .587z"/>
+            </svg>
+            <span class="nav-button-text">Portal</span>
+        </a>
+        <a href="../fom-scatter/" class="nav-button scatter-link" title="View Scatter Plot Analysis">
+            <span class="nav-button-icon scatter"></span>
+            <span class="nav-button-text">Scatter</span>
+        </a>
+    </div>    
     <h1>HPCG Performance Matrix - Galactic Edition</h1>
     <div class="controls">
         <div class="control-group">
@@ -251,7 +282,7 @@
         </div>
 
         <div class="control-group">
-            <label for="coreFilter">Filter by Core Count (vCPUs):</label>
+            <label for="coreFilter">Filter by Core Count (CPUs):</label>
             <select id="coreFilter">
                 <option value="all">All Systems</option>
                 <!-- Options will be populated dynamically -->
@@ -348,6 +379,7 @@
         const coreFilterSelect = document.getElementById('coreFilter');
         const heatmapDiv = document.getElementById('heatmapDiv');
 
+        // These filepaths are under ../data
         const dataSourcesConfig = {
             rawFom: {
                 filePath: 'data_fom.json',
@@ -455,7 +487,7 @@
 
             heatmapDiv.innerHTML = `<p class="loader">Scanning ${dataSourceKey} sector for data patterns...</p>`;
             try {
-                const response = await fetch(config.filePath);
+                const response = await fetch("../data/" + config.filePath);
                 if (!response.ok) {
                     throw new Error(`Hyperspace jump failed! Status: ${response.status} for ${config.filePath}`);
                 }

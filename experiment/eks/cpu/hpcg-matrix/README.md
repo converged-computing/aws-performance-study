@@ -30,9 +30,10 @@ eksctl create cluster --config-file ./cfg/eks-config-r7g.12xlarge.yaml
 
 # these are testing sizes across an instance type
 eksctl create cluster --config-file ./cfg/m7g/eks-config-m7g.12xlarge.yaml
-eksctl create cluster --config-file ./cfg/m7g/eks-config-m7g.2xlarge.yaml
-eksctl create cluster --config-file ./cfg/m7g/eks-config-m7g.4xlarge.yaml
 eksctl create cluster --config-file ./cfg/m7g/eks-config-m7g.8xlarge.yaml
+
+eksctl create cluster --config-file ./cfg/m7g/eks-config-m7g.4xlarge.yaml
+eksctl create cluster --config-file ./cfg/m7g/eks-config-m7g.2xlarge.yaml
 eksctl create cluster --config-file ./cfg/m7g/eks-config-m7g.xlarge.yaml
 
 aws eks update-kubeconfig --region us-east-2 --name hpcg-test
