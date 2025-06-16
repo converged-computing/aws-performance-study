@@ -140,6 +140,9 @@ def main():
     # Find input files (skip anything with test)
     files = ps.find_inputs(indir, "hpcg.out")
 
+    # Don't include within-instance run
+    files = [x for x in files if 'within-instance' not in x]
+
     # Create outdirs for images - stay organized!
     img_outdir = os.path.join(outdir, "img")
     for path in ["fom", "duration", "compatibility", "heatmap"]:
