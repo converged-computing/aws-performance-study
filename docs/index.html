@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic HPCG Navigator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+            background: #00000a; /* Deep, dark space */
+            background-image:
+                radial-gradient(ellipse at 70% 30%, #1a0033 0%, transparent 50%), /* Purple nebula */
+                radial-gradient(ellipse at 30% 70%, #002b4d 0%, transparent 50%), /* Blue nebula */
+                radial-gradient(circle at 50% 50%, rgba(20,20,50,0.5) 0%, #00000a 80%); /* Central dark glow */
+            color: #e0e0ff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden; /* Hide scrollbars if stars overflow */
+            position: relative; /* For star positioning */
+        }
+
+        .starry-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Stars don't block interaction */
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: twinkle 2s infinite alternate;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.3; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+
+
+        .portal-container {
+            text-align: center;
+            position: relative;
+            z-index: 1; /* Above stars */
+            padding: 20px;
+        }
+
+        .portal-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3em;
+            margin-bottom: 10px;
+            color: #ddeeff; /* Slightly brighter base color for better contrast */
+            /* Reduced glow effect */
+            text-shadow:
+                0 0 3px rgba(221, 238, 255, 0.6), /* #ddeeff with alpha */
+                0 0 8px rgba(187, 221, 255, 0.4); /* #bbddff with alpha */
+            animation: pulseTitle 4s infinite ease-in-out; /* Slightly slower pulse */
+        }
+
+        @keyframes pulseTitle {
+            0%, 100% {
+                text-shadow:
+                    0 0 3px rgba(221, 238, 255, 0.6),
+                    0 0 8px rgba(187, 221, 255, 0.4);
+            }
+            50% {
+                text-shadow:
+                    0 0 5px rgba(221, 238, 255, 0.7), /* Slightly stronger in pulse */
+                    0 0 12px rgba(187, 221, 255, 0.5);
+            }
+        }
+        .portal-subtitle {
+            font-size: 1.2em;
+            margin-bottom: 50px;
+            color: #a0c0e0;
+            letter-spacing: 1px;
+        }
+
+        .navigation-grid {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            gap: 40px;
+            flex-wrap: wrap; /* For smaller screens */
+        }
+
+        .celestial-body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: #d0d0ff;
+            transition: transform 0.3s ease, filter 0.3s ease;
+            width: 200px; /* Base width for wrapping */
+        }
+
+        .celestial-body:hover {
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 15px currentColor); /* Glow with body color */
+        }
+
+        .planet-orb {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin-bottom: 15px;
+            position: relative;
+            overflow: hidden; /* For inner details */
+            box-shadow: 0 0 20px rgba(200, 200, 255, 0.3), inset 0 0 20px rgba(0,0,0,0.5);
+            animation: slowRotate 20s linear infinite;
+        }
+
+        @keyframes slowRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Unique planet styles */
+        #planet-vulcan { /* Fiery, rocky */
+            background: radial-gradient(ellipse at 30% 30%, #ffcc66, #ff6600 40%, #993300 70%, #4d1a00);
+            box-shadow: 0 0 30px #ff6600, inset 0 0 20px #4d1a00;
+            animation-duration: 25s; /* Slightly different rotation speed */
+        }
+        #planet-vulcan:hover { filter: drop-shadow(0 0 20px #ff9933); }
+
+
+        #planet-andoria { /* Icy, blue */
+            background: radial-gradient(ellipse at 70% 70%, #e0ffff, #99ccff 40%, #3366cc 70%, #003366);
+            box-shadow: 0 0 30px #99ccff, inset 0 0 20px #003366;
+            animation-duration: 30s;
+        }
+         #planet-andoria:hover { filter: drop-shadow(0 0 20px #ccffff); }
+
+
+        #nebula-cluster { /* Swirling gases, star cluster */
+            background:
+                radial-gradient(ellipse at 20% 80%, #ff99ff, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, #99ffff, transparent 60%),
+                radial-gradient(circle at 50% 50%, #330066, #1a0033 80%);
+            box-shadow: 0 0 30px #cc99ff, inset 0 0 20px #1a0033;
+            animation-duration: 40s; /* Slower, more majestic */
+        }
+         #nebula-cluster:hover { filter: drop-shadow(0 0 20px #ffccff); }
+
+        .celestial-body .name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .celestial-body .description {
+            font-size: 0.9em;
+            color: #b0c0d0;
+            margin-top: 5px;
+            max-width: 180px;
+        }
+
+        /* Footer for a bit of flair */
+        .portal-footer {
+            position: absolute;
+            bottom: 20px;
+            font-size: 0.8em;
+            color: #607090;
+            z-index: 1;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="starry-background" id="starryBackground">
+        <!-- Stars will be generated here by JavaScript -->
+    </div>
+
+    <div class="portal-container">
+        <h1 class="portal-title">Cosmic HPCG Navigator</h1>
+        <p class="portal-subtitle">Charting a course through the constellations of compatibility data.</p>
+
+        <nav class="navigation-grid">
+            <a href="node-explorer/" class="celestial-body">
+                <div class="planet-orb" id="planet-vulcan"></div>
+                <span class="name">Alpha Nodes Quadrant</span>
+                <p class="description">Explore kernel and other node features from 26 instances.</p>
+            </a>
+
+            <a href="compatibility/" class="celestial-body">
+                <div class="planet-orb" id="planet-andoria"></div>
+                <span class="name">Beta Compatibility Nebula</span>
+                <p class="description">View binary compatibility for over hundreds of hpcg builds across instance types.</p>
+            </a>
+            <a href="fom/" class="celestial-body">
+                <div class="planet-orb" id="nebula-cluster"></div>
+                <span class="name">Gamma Performance Cluster</span>
+                <p class="description">Explore figures of merit and other raw GFLOP/s metrics.</p>
+            </a>
+        </nav>
+    </div>
+
+    <footer class="portal-footer">
+        © 2025 Interstellar Dinosaur Productions | <span style="font-style:italic; color:pink">What, you haven't seen a space dinosaur before?</span>
+    </footer>
+
+    <script>
+        // Generate stars
+        const starryBackground = document.getElementById('starryBackground');
+        const numStars = 150; // Adjust for density
+
+        for (let i = 0; i < numStars; i++) {
+            let star = document.createElement('div');
+            star.className = 'star';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.left = Math.random() * 100 + '%';
+            
+            const size = Math.random() * 2 + 1; // Star size between 1px and 3px
+            star.style.width = size + 'px';
+            star.style.height = size + 'px';
+            
+            // Vary animation delay for more natural twinkling
+            star.style.animationDelay = Math.random() * 2 + 's';
+            // Vary animation duration for more variety
+            const duration = Math.random() * 1.5 + 1.5; // between 1.5s and 3s
+            star.style.animationDuration = duration + 's, ' + duration + 's'; // For twinkle and potential movement
+
+            starryBackground.appendChild(star);
+        }
+    </script>
+</body>
+</html>

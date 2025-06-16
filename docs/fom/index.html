@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HPCG Performance Visualization - Galactic Edition</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #0b0f22; /* Deep space blue */
+            color: #e0e6f0; /* Light, slightly bluish text */
+            /* Optional: Add a subtle starry background pattern */
+            /* background-image: url('path_to_your_star_image.png'); */
+            /* background-attachment: fixed; */
+            /* background-size: cover; */
+        }
+
+        h1 {
+            color: #79c0ff; /* Brighter blue for headings */
+            text-align: center;
+            text-shadow: 0 0 8px rgba(121, 192, 255, 0.5);
+        }
+
+        .controls {
+            margin-bottom: 25px;
+            padding: 20px;
+            background-color: rgba(20, 30, 55, 0.7); /* Semi-transparent darker blue */
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+            border: 1px solid #2a3b60;
+            display: flex;
+            gap: 20px; /* Spacing between control groups */
+            align-items: center;
+            flex-wrap: wrap; /* Allow controls to wrap on smaller screens */
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .controls label {
+            color: #a7c5f0; /* Lighter blue for labels */
+            font-weight: 500;
+        }
+
+        .controls select {
+            background-color: #1f2a40; /* Darker input background */
+            color: #e0e6f0;
+            border: 1px solid #3c5070;
+            padding: 8px 12px;
+            border-radius: 5px;
+            min-width: 200px; /* Give selects some base width */
+            font-size: 0.95em;
+        }
+        .controls select:focus {
+            outline: none;
+            border-color: #79c0ff;
+            box-shadow: 0 0 5px rgba(121, 192, 255, 0.5);
+        }
+
+
+        #chartContainer {
+            width: 95%; /* Make it slightly wider */
+            max-width: 1400px; /* Increase max width */
+            margin: auto;
+        }
+
+        #heatmapDiv {
+            border: 1px solid #2a3b60; /* Border to match controls */
+            border-radius: 8px; /* Rounded corners for the plot div */
+            min-height: 800px; /* Default min height, Plotly layout will override */
+            background-color: #101828; /* Fallback background for the div */
+            overflow: hidden; /* Ensures Plotly border-radius is respected */
+        }
+
+        .loader {
+            text-align: center;
+            font-size: 1.2em;
+            padding: 40px;
+            color: #a7c5f0;
+        }
+    </style>
+</head>
+<body>
+
+
+    <h1>HPCG Performance Matrix - Galactic Edition</h1>
+    <div class="controls">
+        <div class="control-group">
+            <label for="dataSource">Data Sector:</label>
+            <select id="dataSource">
+                <option value="fomPerDollar" selected>FOM (Gflops/sec per Dollar)</option>
+                <option value="rawFom">Raw FOM (Gflops/sec)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="coreFilter">Filter by Core Count (vCPUs):</label>
+            <select id="coreFilter">
+                <option value="all">All Systems</option>
+                <!-- Options will be populated dynamically -->
+            </select>
+        </div>
+    </div>
+
+    <div id="chartContainer">
+        <div id="heatmapDiv"><p class="loader">Initializing Warp Drive... Stand by for data transmission...</p></div>
+    </div>
+
+    <script>
+        const dataSourceSelect = document.getElementById('dataSource');
+        const coreFilterSelect = document.getElementById('coreFilter');
+        const heatmapDiv = document.getElementById('heatmapDiv');
+
+        const dataSourcesConfig = {
+            fomPerDollar: {
+                filePath: 'data_fom_per_dollar.json',
+                loadedData: null
+            },
+            rawFom: {
+                filePath: 'data_raw_fom.json',
+                loadedData: null
+            }
+        };
+
+        async function loadData(dataSourceKey) {
+            const config = dataSourcesConfig[dataSourceKey];
+            if (config.loadedData) {
+                return config.loadedData;
+            }
+
+            heatmapDiv.innerHTML = `<p class="loader">Scanning ${dataSourceKey} sector for data patterns...</p>`;
+            try {
+                const response = await fetch(config.filePath);
+                if (!response.ok) {
+                    throw new Error(`Hyperspace jump failed! Status: ${response.status} for ${config.filePath}`);
+                }
+                const data = await response.json();
+
+                if (!data.values || data.values.length === 0) {
+                    console.warn(`"values" field missing or empty in ${config.filePath}. Generating cosmic noise (random data) for demonstration.`);
+                    const numRows = data.rowLabels ? data.rowLabels.length : 10;
+                    const numCols = data.colLabels ? data.colLabels.length : 5;
+                    const maxVal = data.zmax || 25;
+                    data.values = Array(numRows).fill(0).map(() =>
+                        Array(numCols).fill(0).map(() => Math.random() * maxVal)
+                    );
+                }
+                config.loadedData = data;
+                return data;
+            } catch (error) {
+                console.error("Critical mission failure (data load):", error);
+                heatmapDiv.innerHTML = `<p class="loader" style="color: #ff6b6b;">Data anomaly detected: ${error.message}. Check comms (console) and astrogation charts (file path).</p>`;
+                return null;
+            }
+        }
+
+        function getCoresFromInstanceName(instanceName, coreMap) {
+            return coreMap ? coreMap[instanceName] || null : null;
+        }
+
+        function populateCoreFilterOptions(colLabels, coreMap) {
+            while (coreFilterSelect.options.length > 1) {
+                coreFilterSelect.remove(1);
+            }
+            if (!colLabels || !coreMap) return;
+
+            const uniqueCores = new Set();
+            colLabels.forEach(label => {
+                const cores = getCoresFromInstanceName(label, coreMap);
+                if (cores !== null && !isNaN(cores)) {
+                    uniqueCores.add(cores);
+                }
+            });
+
+            const sortedCores = Array.from(uniqueCores).sort((a, b) => a - b);
+            sortedCores.forEach(coreVal => {
+                const option = document.createElement('option');
+                option.value = coreVal;
+                option.textContent = `${coreVal} vCPUs`;
+                coreFilterSelect.appendChild(option);
+            });
+        }
+
+        function drawHeatmap(dataset, coreFilterVal) {
+            if (!dataset) {
+                if (!heatmapDiv.innerHTML.includes("Data anomaly detected")) {
+                     heatmapDiv.innerHTML = `<p class="loader">No data transmissions received.</p>`;
+                }
+                return;
+            }
+
+            let currentAllColLabels = dataset.colLabels || [];
+            let currentValues = dataset.values || [];
+            let currentCoreMap = dataset.coreMap || {};
+            let currentAllRowLabels = dataset.rowLabels || [];
+
+
+            let filteredColLabels = [];
+            let filteredColIndices = [];
+
+            if (coreFilterVal === "all") {
+                filteredColLabels = [...currentAllColLabels];
+                filteredColIndices = currentAllColLabels.map((_, i) => i);
+            } else {
+                const targetCores = parseInt(coreFilterVal);
+                currentAllColLabels.forEach((label, index) => {
+                    const cores = getCoresFromInstanceName(label, currentCoreMap);
+                    if (cores === targetCores) {
+                        filteredColLabels.push(label);
+                        filteredColIndices.push(index);
+                    }
+                });
+            }
+            
+            heatmapDiv.innerHTML = ''; 
+
+            if (filteredColLabels.length === 0 && coreFilterVal !== "all" && currentAllColLabels.length > 0) {
+                 heatmapDiv.innerHTML = `<p class="loader">No stellar systems match ${coreFilterVal} vCPUs in the current sector.</p>`;
+                 return;
+            }
+            if (filteredColLabels.length === 0 && currentAllColLabels.length > 0) {
+                heatmapDiv.innerHTML = `<p class="loader">No systems match filter. Adjust scanner.</p>`;
+                return;
+            }
+            if (currentAllColLabels.length === 0) {
+                heatmapDiv.innerHTML = `<p class="loader">Sector map (column labels) undefined.</p>`;
+                return;
+            }
+            if (currentAllRowLabels.length === 0) {
+                 heatmapDiv.innerHTML = `<p class="loader">Stellar classifications (row labels) undefined.</p>`;
+                return;
+            }
+
+
+            let filteredValues = currentValues.map(row =>
+                filteredColIndices.map(colIndex => row[colIndex])
+            );
+
+            const trace = {
+                z: filteredValues,
+                x: filteredColLabels,
+                y: currentAllRowLabels,
+                type: 'heatmap',
+                colorscale: dataset.colorscale || 'Viridis',
+                reversescale: dataset.reversescale !== undefined ? dataset.reversescale : false,
+                colorbar: {
+                    title: {
+                        text: dataset.name.includes("Dollar") ? 'Gflops/Sec/$' : 'Gflops/Sec',
+                        side: 'right',
+                        font: { color: '#c0d0f0' }
+                    },
+                    tickfont: { color: '#a0b0d0' },
+                    bgcolor: 'rgba(11, 15, 34, 0.6)', // Slightly transparent colorbar background
+                    bordercolor: '#2a3b60',
+                    borderwidth: 1,
+                    len: 0.95 // Length of the color bar relative to plot height
+                },
+                zmin: dataset.zmin,
+                zmax: dataset.zmax,
+                hoverongaps: false
+            };
+
+            const layout = {
+                title: {
+                    text: dataset.name,
+                    font: {
+                        color: '#d0e0ff',
+                        size: 18
+                    },
+                    x: 0.5, // Center title
+                    xanchor: 'center'
+                },
+                height: 850, // Increased plot height
+                xaxis: {
+                    type: 'category',
+                    tickangle: -60,
+                    automargin: true,
+                    tickfont: { color: '#a7c5f0' },
+                    linecolor: '#3c5070', // Axis line
+                    gridcolor: '#1a2438'  // Grid line color
+                },
+                yaxis: {
+                    type: 'category',
+                    automargin: true,
+                    tickfont: { color: '#a7c5f0' },
+                    linecolor: '#3c5070',
+                    gridcolor: '#1a2438'
+                },
+                margin: { l: 220, r: 100, b: 180, t: 60, pad: 4 }, // Adjusted margins for labels
+                autosize: true, // Will use height if specified, otherwise auto-sizes to div
+                paper_bgcolor: '#0f162d', // Background of the chart area (slightly lighter than body)
+                plot_bgcolor: '#141c33',  // Background of the plot itself
+                font: {
+                    family: 'Segoe UI, Tahoma, sans-serif',
+                    color: '#e0e6f0' // Default font color for plot elements
+                }
+            };
+
+            Plotly.newPlot(heatmapDiv, [trace], layout, {responsive: true});
+        }
+
+        async function updatePlotInterface() {
+            const selectedDataSourceKey = dataSourceSelect.value;
+            const selectedCoreFilter = coreFilterSelect.value; // Get current filter BEFORE potentially reloading options
+
+            const currentData = await loadData(selectedDataSourceKey);
+            
+            if (currentData) {
+                const currentCoreFilterOptionsKey = `${selectedDataSourceKey}-cores`;
+                if (coreFilterSelect.dataset.populatedFor !== currentCoreFilterOptionsKey) {
+                    // Save current selection to try and restore it
+                    const previouslySelectedCoreValue = coreFilterSelect.value;
+                    populateCoreFilterOptions(currentData.colLabels, currentData.coreMap);
+                    coreFilterSelect.dataset.populatedFor = currentCoreFilterOptionsKey;
+                    
+                    // Try to restore previous selection
+                    if (Array.from(coreFilterSelect.options).find(opt => opt.value === previouslySelectedCoreValue)) {
+                        coreFilterSelect.value = previouslySelectedCoreValue;
+                    } else {
+                        coreFilterSelect.value = 'all'; // Reset if previous selection is no longer valid
+                    }
+                }
+                // Use the (potentially restored or reset) coreFilterSelect.value for drawing
+                drawHeatmap(currentData, coreFilterSelect.value);
+            }
+        }
+
+        dataSourceSelect.addEventListener('change', updatePlotInterface);
+        coreFilterSelect.addEventListener('change', async () => {
+            const selectedDataSourceKey = dataSourceSelect.value;
+            const currentData = dataSourcesConfig[selectedDataSourceKey].loadedData || await loadData(selectedDataSourceKey);
+            drawHeatmap(currentData, coreFilterSelect.value);
+        });
+
+        async function initializeSystem() {
+            const initialDataSourceKey = dataSourceSelect.value;
+            const initialData = await loadData(initialDataSourceKey);
+            if (initialData) {
+                populateCoreFilterOptions(initialData.colLabels, initialData.coreMap);
+                coreFilterSelect.dataset.populatedFor = `${initialDataSourceKey}-cores`;
+                drawHeatmap(initialData, coreFilterSelect.value);
+            }
+        }
+
+        initializeSystem();
+
+    </script>
+</body>
+</html>

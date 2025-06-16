@@ -24,6 +24,16 @@ eksctl create cluster --config-file ./cfg/eks-config-m7g.16xlarge.yaml
 eksctl create cluster --config-file ./cfg/eks-config-r6a.12xlarge.yaml
 eksctl create cluster --config-file ./cfg/eks-config-t4g.2xlarge.yaml
 eksctl create cluster --config-file ./cfg/eks-config-r7iz.8xlarge.yaml
+eksctl create cluster --config-file ./cfg/eks-config-r6i.8xlarge.yaml
+eksctl create cluster --config-file ./cfg/eks-config-g5.8xlarge.yaml
+eksctl create cluster --config-file ./cfg/eks-config-r7g.12xlarge.yaml
+
+# these are testing sizes across an instance type
+eksctl create cluster --config-file ./cfg/m7g/eks-config-m7g.12xlarge.yaml
+eksctl create cluster --config-file ./cfg/m7g/eks-config-m7g.2xlarge.yaml
+eksctl create cluster --config-file ./cfg/m7g/eks-config-m7g.4xlarge.yaml
+eksctl create cluster --config-file ./cfg/m7g/eks-config-m7g.8xlarge.yaml
+eksctl create cluster --config-file ./cfg/m7g/eks-config-m7g.xlarge.yaml
 
 aws eks update-kubeconfig --region us-east-2 --name hpcg-test
 aws eks update-kubeconfig --region us-east-1 --name hpcg-test
@@ -130,6 +140,16 @@ bash run-study-arm.sh m7g.16xlarge 64
 bash run-study.sh r6a.12xlarge 24
 bash run-study-arm.sh t4g.2xlarge 8
 bash run-study.sh r7iz.8xlarge 16
+bash run-study.sh r6i.8xlarge 16
+bash run-gpu-study.sh g5.8xlarge 16
+bash run-study-arm.sh r7g.12xlarge 48
+
+# Across instance type
+bash run-study-arm.sh m7g.12xlarge 48
+bash run-study-arm.sh m7g.8xlarge 32
+bash run-study-arm.sh m7g.4xlarge 16
+bash run-study-arm.sh m7g.2xlarge 8
+bash run-study-arm.sh m7g.xlarge 4
 ```
 
 ## Clean Up
