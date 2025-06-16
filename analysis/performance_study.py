@@ -298,8 +298,9 @@ class ResultParser:
     """
     Helper class to parse results into a data frame.
     """
-
-    def __init__(self, app):
+    def __init__(self, app, include_filename=False, include_iteration=False):
+        self.include_filename = include_filename
+        self.include_iteration = include_iteration
         self.init_df()
         self.idx = 0
         self.app = app
@@ -308,8 +309,7 @@ class ResultParser:
         """
         Initialize an empty data frame for the application
         """
-        self.df = pandas.DataFrame(
-            columns=[
+        columns=[
                 "experiment",
                 "cloud",
                 "env",
@@ -319,10 +319,14 @@ class ResultParser:
                 "metric",
                 "value",
                 "gpu_count",
-            ]
-        )
+        ]
+        if self.include_filename:
+            columns.append("filename")
+        if self.include_iteration:
+            columns.append("iteration")
+        self.df = pandas.DataFrame(columns)
 
-    def set_context(self, cloud, env, env_type, size, qualifier=None, gpu_count=0):
+    def set_context(self, cloud, env, env_type, size, qualifier=None, gpu_count=0, filename=None):
         """
         Set the context for the next stream of results.
 
@@ -335,6 +339,8 @@ class ResultParser:
         # Extra metadata to add to experiment name
         self.qualifier = qualifier
         self.gpu_count = gpu_count
+        if self.include_filename:
+            self.filename = filename
 
     def add_result(self, metric, value):
         """
@@ -380,10 +386,12 @@ class ProblemSizeParser(ResultParser):
                 "metric",
                 "value",
                 "gpu_count",
+                "filename",
+                "iteration"
             ]
         )
 
-    def add_result(self, metric, value, problem_size):
+    def add_result(self, metric, value, problem_size, filename=None, iteration=None):
         """
         Add a result to the table
         """
@@ -403,6 +411,8 @@ class ProblemSizeParser(ResultParser):
             metric,
             value,
             self.gpu_count,
+            filename,
+            iteration,
         ]
         self.idx += 1
 

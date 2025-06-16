@@ -7,6 +7,53 @@
   <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Exo+2:wght@300;400&display=swap');
 
+        .portal-home-link {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            display: flex; /* Align icon and text horizontally */
+            align-items: center; /* Vertically align icon and text */
+            padding: 8px 12px; /* Adjust padding for text */
+            border-radius: 20px; /* Pill shape */
+            text-decoration: none;
+            background-color: rgba(20, 30, 55, 0.6); /* Subtle background like controls */
+            border: 1px solid #2a3b60; /* Subtle border */
+            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .portal-home-link svg {
+            display: block;
+            width: 22px; /* Adjusted SVG size */
+            height: 22px;
+            color: #FFD700; /* Gold/Yellow star color */
+            margin-right: 8px; /* Space between star and text */
+            transition: transform 0.3s ease; /* For hover effect on star only */
+        }
+
+        .portal-home-text {
+            font-family: 'Orbitron', sans-serif; /* Sci-fi font for portal text */
+            font-size: 0.9em; /* Adjust as needed */
+            color: #ddeeff; /* Light text color */
+            font-weight: 500;
+            white-space: nowrap; /* Prevent text from wrapping */
+        }
+
+        .portal-home-link:hover {
+            background-color: rgba(42, 59, 96, 0.8); /* Darker background on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .portal-home-link:hover svg {
+            transform: rotate(25deg) scale(1.1); /* Rotate and scale star on link hover */
+        }
+
+        .portal-home-link:active {
+            transform: translateY(0px); /* Push back down on click */
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
         body {
             font-family: 'Exo 2', sans-serif;
             margin: 0;
@@ -141,6 +188,12 @@
     <script src="https://cdn.plot.ly/plotly-3.0.1.min.js" charset="utf-8"></script>
  </head>
 <body>
+    <a href="../" class="portal-home-link" title="Back to Cosmic HPCG Navigator">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="28px" height="28px"> {/* Slightly smaller star */}
+            <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279L12 19.445l-7.416 3.964L6.064 15.134 0 9.306l8.332-1.151L12 .587z"/>
+        </svg>
+        <span class="portal-home-text">Galaxy Portal</span>
+    </a>
     <div id="platformBox">--</div>
     <h1>HPCG Compatibility Viewer</h1>
     <div class="controls">

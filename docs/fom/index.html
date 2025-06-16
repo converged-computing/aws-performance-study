@@ -6,6 +6,52 @@
     <title>HPCG Performance Visualization - Galactic Edition</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
+        .portal-home-link {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            display: flex; /* Align icon and text horizontally */
+            align-items: center; /* Vertically align icon and text */
+            padding: 8px 12px; /* Adjust padding for text */
+            border-radius: 20px; /* Pill shape */
+            text-decoration: none;
+            background-color: rgba(20, 30, 55, 0.6); /* Subtle background like controls */
+            border: 1px solid #2a3b60; /* Subtle border */
+            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .portal-home-link svg {
+            display: block;
+            width: 22px; /* Adjusted SVG size */
+            height: 22px;
+            color: #FFD700; /* Gold/Yellow star color */
+            margin-right: 8px; /* Space between star and text */
+            transition: transform 0.3s ease; /* For hover effect on star only */
+        }
+
+        .portal-home-text {
+            font-family: 'Orbitron', sans-serif; /* Sci-fi font for portal text */
+            font-size: 0.9em; /* Adjust as needed */
+            color: #ddeeff; /* Light text color */
+            font-weight: 500;
+            white-space: nowrap; /* Prevent text from wrapping */
+        }
+
+        .portal-home-link:hover {
+            background-color: rgba(42, 59, 96, 0.8); /* Darker background on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .portal-home-link:hover svg {
+            transform: rotate(25deg) scale(1.1); /* Rotate and scale star on link hover */
+        }
+
+        .portal-home-link:active {
+            transform: translateY(0px); /* Push back down on click */
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
@@ -16,6 +62,85 @@
             /* background-image: url('path_to_your_star_image.png'); */
             /* background-attachment: fixed; */
             /* background-size: cover; */
+        }
+
+       .metrics-guide-container {
+            width: 95%;
+            max-width: 1400px; /* Match chartContainer or adjust as needed */
+            margin: 40px auto 20px auto; /* Spacing above and below */
+            padding: 20px;
+            background-color: rgba(20, 30, 55, 0.7); /* Consistent with controls */
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+            border: 1px solid #2a3b60;
+            color: #c0d0f0; /* Lighter text for content */
+        }
+
+        .metrics-guide-container h2 {
+            font-family: 'Orbitron', sans-serif;
+            color: #79c0ff; /* Brighter blue for headings */
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+
+        .metrics-guide-container p {
+            line-height: 1.6;
+            margin-bottom: 15px;
+            font-size: 0.95em;
+        }
+        .metrics-guide-container code {
+            background-color: rgba(0,0,0,0.3);
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+            color: #9fceff; /* Light blue for code */
+        }
+
+
+        .table-responsive {
+            overflow-x: auto; /* Allows horizontal scrolling on small screens */
+            margin-top: 10px;
+        }
+
+        .metrics-guide-container table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .metrics-guide-container th,
+        .metrics-guide-container td {
+            border: 1px solid #3c5070; /* Table borders */
+            padding: 10px 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .metrics-guide-container th {
+            background-color: #1f2a40; /* Darker header background */
+            color: #a7c5f0;
+            font-weight: 600;
+        }
+
+        .metrics-guide-container td {
+            background-color: #141c33; /* Slightly lighter cell background */
+            color: #c0d0f0;
+        }
+
+        .metrics-guide-container tr:nth-child(even) td {
+            background-color: #182138; /* Zebra striping for readability */
+        }
+
+        .portal-footer { /* Assuming you have this from the portal page example */
+            text-align: center;
+            margin-top: 30px;
+            padding-bottom: 20px; /* Ensure space if it's the last element */
+            font-size: 0.8em;
+            color: #607090;
+            position: relative; /* If it was absolute, might need adjustment */
+            z-index: 1;
         }
 
         h1 {
@@ -87,15 +212,41 @@
     </style>
 </head>
 <body>
-
-
+    <a href="../" class="portal-home-link" title="Back to Cosmic HPCG Navigator">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="28px" height="28px"> {/* Slightly smaller star */}
+            <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279L12 19.445l-7.416 3.964L6.064 15.134 0 9.306l8.332-1.151L12 .587z"/>
+        </svg>
+        <span class="portal-home-text">Galaxy Portal</span>
+    </a>
     <h1>HPCG Performance Matrix - Galactic Edition</h1>
     <div class="controls">
         <div class="control-group">
             <label for="dataSource">Data Sector:</label>
             <select id="dataSource">
-                <option value="fomPerDollar" selected>FOM (Gflops/sec per Dollar)</option>
-                <option value="rawFom">Raw FOM (Gflops/sec)</option>
+                <option value="rawFom" selected>Raw FOM (Gflops/sec)</option>
+                <option value="fomPerDollar">FOM (Gflops/sec per Dollar)</option>
+                <option value="gflopsSpmv">GFLOP/s: SpMV</option>
+                <option value="gflopsMg">GFLOP/s: MG (Multigrid)</option>
+                <option value="gflopsDdot">GFLOP/s: DDOT</option>
+                <option value="gflopsWaxpby">GFLOP/s: WAXPBY</option>
+                <option value="memBwTotal">Memory Bandwidth: Total (GB/s)</option>
+                <option value="memBwRead">Memory Bandwidth: Read (GB/s)</option>
+                <option value="memBwWrite">Memory Bandwidth: Write (GB/s)</option>
+                <option value="duration">Duration (seconds)</option>
+                <option value="totalCGIterations">Total CG Optimized Iterations</option>
+                <option value="memUsedTotalGbytes">Memory Used: Total (Gbytes)</option>
+                <option value="setupTimeSeconds">Setup Time (seconds)</option>
+                <option value="mpiAllreduceMax">MPI Allreduce: Max Time (sec)</option>
+                <option value="mpiAllreduceAvg">MPI Allreduce: Avg Time (sec)</option>
+                <option value="mpiAllreduceMin">MPI Allreduce: Min Time (sec)</option>
+                <option value="dimensionNx">Global Dimension: Nx</option>
+                <option value="dimensionNy">Global Dimension: Ny</option>
+                <option value="dimensionNz">Global Dimension: Nz</option>
+                <option value="processes">Distributed Processes</option>
+                <option value="threadsPerProcess">Threads Per Process</option>
+                <option value="procDimX">Processor Dimension: npx</option>
+                <option value="procDimY">Processor Dimension: npy</option>
+                <option value="procDimZ">Processor Dimension: npz</option>
             </select>
         </div>
 
@@ -112,18 +263,186 @@
         <div id="heatmapDiv"><p class="loader">Initializing Warp Drive... Stand by for data transmission...</p></div>
     </div>
 
+    <div class="metrics-guide-container">
+        <h2>Understanding the Metrics (Weak Scaling Context)</h2>
+        <p>We ran out study setting a fixed local problem size per processor. Notably, the instance types vary in how many processes they have, meaning comparing raw values is not always fair. The following table explains the metrics available in the "Data Sector" dropdown and how they might be interpreted in this weak scaling scenario (where local problem size per process is fixed, and total processes `N` varies).</p>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Original Metric (from HPCG Output)</th>
+                        <th>Normalized Metric Name for Heatmap</th>
+                        <th>Normalization Formula (Conceptual)</th>
+                        <th>Expected Trend in Ideal Weak Scaling</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>GFLOP/s Summary::Raw SpMV=</code> (and other raw GFLOP/s)</td>
+                        <td>Per-Process SpMV GFLOP/s (or MG, DDOT, WAXPBY, Total)</td>
+                        <td><code>V(Raw_Metric_GFLOPs) / N</code></td>
+                        <td>Constant</td>
+                    </tr>
+                    <tr>
+                        <td><code>Final Summary::HPCG result is VALID with a GFLOP/s rating of=</code></td>
+                        <td>Per-Process Official FOM (GFLOP/s)</td>
+                        <td><code>V(Official_FOM) / N</code></td>
+                        <td>Constant</td>
+                    </tr>
+                    <tr>
+                        <td><code>Benchmark Time Summary::Total=</code></td>
+                        <td>Avg. Time per CG Iteration (approx.)</td>
+                        <td><code>V(Total_Time) / Total_Optimized_CG_Iterations</code></td>
+                        <td>Constant</td>
+                    </tr>
+                    <tr>
+                        <td><code>GB/s Summary::Raw Total B/W=</code> (and read/write)</td>
+                        <td>Per-Process Total Memory BW (GB/s) (or Read/Write)</td>
+                        <td><code>V(Total_BW) / N</code></td>
+                        <td>Constant</td>
+                    </tr>
+                    <tr>
+                        <td><code>Memory Use Information::Total memory used for data (Gbytes)=</code></td>
+                        <td>Per-Process Memory Used (GB)</td>
+                        <td><code>V(Memory_Used) / N</code></td>
+                        <td>Constant</td>
+                    </tr>
+                    <tr>
+                        <td><code>Setup Information::Setup Time=</code></td>
+                        <td>Per-Process Setup Time (sec)</td>
+                        <td><code>V(Setup_Time) / N</code></td>
+                        <td>Constant / Slow Growth</td>
+                    </tr>
+                    <tr>
+                        <td><code>DDOT Timing Variations::Max DDOT MPI_Allreduce time=</code></td>
+                        <td>Max MPI_Allreduce Time (sec)</td>
+                        <td><code>V(Max_Allreduce_Time)</code> (compare raw values)</td>
+                        <td>Slow Growth</td>
+                    </tr>
+                    <tr>
+                        <td><code>DDOT Timing Variations::Avg DDOT MPI_Allreduce time=</code></td>
+                        <td>Avg MPI_Allreduce Time (sec)</td>
+                        <td><code>V(Avg_Allreduce_Time)</code> (compare raw values)</td>
+                        <td>Slow Growth</td>
+                    </tr>
+                     <tr>
+                        <td><code>Benchmark Time Summary::DDOT=</code></td>
+                        <td>Avg. DDOT Time per CG Iteration (approx.)</td>
+                        <td><code>V(Total_DDOT_Time) / Total_Optimized_CG_Iterations</code></td>
+                        <td>Constant / Slow Growth</td>
+                    </tr>
+                    <tr>
+                        <td><code>Spectral Convergence Tests::Unpreconditioned::Maximum iteration count=</code></td>
+                        <td>Unpreconditioned CG Iterations</td>
+                        <td><code>V(Iteration_Count)</code> (compare raw values)</td>
+                        <td>Constant</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p><strong>Note:</strong> `V(Metric)` refers to the value of the metric, and `N` is the total number of MPI processes used for the run. For metrics compared raw, observe their trend as `N` changes. "Total Optimized CG Iterations" is also extracted from the HPCG output. Metrics not in the table report values as is.</p>
+    </div>
+
     <script>
         const dataSourceSelect = document.getElementById('dataSource');
         const coreFilterSelect = document.getElementById('coreFilter');
         const heatmapDiv = document.getElementById('heatmapDiv');
 
         const dataSourcesConfig = {
-            fomPerDollar: {
-                filePath: 'data_fom_per_dollar.json',
+            rawFom: {
+                filePath: 'data_fom.json',
                 loadedData: null
             },
-            rawFom: {
-                filePath: 'data_raw_fom.json',
+            fomPerDollar: {
+                filePath: 'data_fom_per_dollar.json',
+                loadedData: null,
+            },
+            dimensionNx: {
+                filePath: 'data_dimension_nx.json',
+                loadedData: null
+            },
+            dimensionNy: {
+                filePath: 'data_dimension_ny.json',
+                loadedData: null
+            },
+            dimensionNz: {
+                filePath: 'data_dimension_nz.json',
+                loadedData: null
+            },
+            totalCGIterations: {
+                filePath: 'data_total_cg_iterations.json',
+                loadedData: null
+            },
+            duration: {
+                filePath: 'data_duration.json',
+                loadedData: null
+            },
+            gflopsDdot: {
+                filePath: 'data_gflops_per_second_ddot.json',
+                loadedData: null
+            },
+            gflopsMg: {
+                filePath: 'data_gflops_per_second_mg.json',
+                loadedData: null
+            },
+            gflopsSpmv: {
+                filePath: 'data_gflops_per_second_spmv.json',
+                loadedData: null
+            },
+            gflopsWaxpby: {
+                filePath: 'data_gflops_per_second_waxpby.json',
+                loadedData: null
+            },
+            memBwRead: {
+                filePath: 'data_memory_bandwidth_across_kernels_read.json',
+                loadedData: null
+            },
+            memBwTotal: {
+                filePath: 'data_memory_bandwidth_across_kernels_total.json',
+                loadedData: null
+            },
+            memBwWrite: {
+                filePath: 'data_memory_bandwidth_across_kernels_write.json',
+                loadedData: null
+            },
+            memUsedTotalGbytes: {
+                filePath: 'data_memory_used_data_total_gbytes.json',
+                loadedData: null
+            },
+            mpiAllreduceAvg: {
+                filePath: 'data_mpi_allreduce_avg.json',
+                loadedData: null
+            },
+            mpiAllreduceMax: {
+                filePath: 'data_mpi_allreduce_max.json',
+                loadedData: null
+            },
+            mpiAllreduceMin: { // Note: Your previous list had max and avg for DDOT, min might be less common but included if you have it
+                filePath: 'data_mpi_allreduce_min.json',
+                loadedData: null
+            },
+            processes: {
+                filePath: 'data_processes.json',
+                loadedData: null
+            },
+            procDimX: {
+                filePath: 'data_processor_dimension_x.json',
+                loadedData: null
+            },
+            procDimY: {
+                filePath: 'data_processor_dimension_y.json',
+                loadedData: null
+            },
+            procDimZ: {
+                filePath: 'data_processor_dimension_z.json',
+                loadedData: null
+            },
+            setupTimeSeconds: {
+                filePath: 'data_setup_time_seconds.json',
+                loadedData: null
+            },
+            threadsPerProcess: {
+                filePath: 'data_threads_per_process.json',
                 loadedData: null
             }
         };
@@ -250,11 +569,11 @@
                 colorscale: dataset.colorscale || 'Viridis',
                 reversescale: dataset.reversescale !== undefined ? dataset.reversescale : false,
                 colorbar: {
-                    title: {
-                        text: dataset.name.includes("Dollar") ? 'Gflops/Sec/$' : 'Gflops/Sec',
-                        side: 'right',
-                        font: { color: '#c0d0f0' }
-                    },
+                    //title: {
+                    //    text: dataset.name.includes("Dollar") ? 'Gflops/Sec/$' : 'Gflops/Sec',
+                    //    side: 'right',
+                    //    font: { color: '#c0d0f0' }
+                    //},
                     tickfont: { color: '#a0b0d0' },
                     bgcolor: 'rgba(11, 15, 34, 0.6)', // Slightly transparent colorbar background
                     bordercolor: '#2a3b60',
