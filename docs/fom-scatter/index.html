@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HPCG Performance Scaling Explorer - Galactic Edition</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+      .top-navigation-links {
+            position: fixed;
+            top: 15px; /* Adjusted slightly */
+            left: 15px;
+            z-index: 1000;
+            display: flex; /* Arrange buttons side-by-side */
+            gap: 10px; /* Space between buttons */
+        }
+
+        /* --- GENERIC NAVIGATION BUTTON STYLES --- */
+        .nav-button {
+            display: flex;
+            align-items: center;
+            padding: 8px 15px; /* Uniform padding */
+            border-radius: 20px; /* Pill shape */
+            text-decoration: none;
+            background-color: rgba(30, 45, 70, 0.7); /* Slightly different base */
+            border: 1px solid #3a5070; /* Slightly different border */
+            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .nav-button:hover {
+            background-color: rgba(52, 79, 116, 0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .nav-button:active {
+            transform: translateY(0px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .nav-button-icon {
+            display: inline-block; /* Or block if SVG is direct child */
+            margin-right: 8px;
+            transition: transform 0.3s ease;
+        }
+        .nav-button:hover .nav-button-icon { /* Common hover for icons */
+             /* transform: scale(1.1); // General icon scale if desired */
+        }
+
+        .nav-button-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9em;
+            color: #ddeeff;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+
+        .scatter-link .nav-button-icon.scatter {
+            width: 14px;            /* Size of the square's side */
+            height: 14px;           /* Size of the square's side */
+            background-color: #64FFDA; /* Teal/Aqua color for scatter plot icon */
+            /* border-radius: 50%; /* REMOVE THIS LINE to make it a square */
+            align-self: center;     /* Ensure vertical centering within flex button */
+            /* Optional: Add a slight rotation to the square if desired for a diamond look */
+            /* transform: rotate(45deg); */
+        }
+        .scatter-link:hover .nav-button-icon.scatter {
+            transform: scale(1.2) rotate(10deg); /* Make square slightly bigger and rotate a bit on hover */
+             /* If you used rotate(45deg) above, adjust hover rotation: e.g., rotate(55deg) */
+        }
+
+        .portal-link .nav-button-icon.star {
+            width: 22px;
+            height: 22px;
+            color: #FFD700; /* Yellow star color */
+        }
+        .portal-link:hover .nav-button-icon.star {
+            transform: rotate(25deg) scale(1.1);
+        }
+        /* --- GENERAL PAGE STYLES --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #0b0f22;
+            color: #e0e6f0;
+            padding-top: 80px; /* Account for fixed portal link */
+        }
+        h1 {
+            color: #79c0ff;
+            text-align: center;
+            text-shadow: 0 0 8px rgba(121, 192, 255, 0.5);
+            margin-bottom: 30px; /* Added margin after h1 */
+        }
+
+        /* --- CONTROLS --- */
+        .controls {
+            margin-bottom: 25px;
+            padding: 20px;
+            background-color: rgba(20, 30, 55, 0.7);
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+            border: 1px solid #2a3b60;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .controls label {
+            color: #a7c5f0;
+            font-weight: 500;
+        }
+        .controls select {
+            background-color: #1f2a40;
+            color: #e0e6f0;
+            border: 1px solid #3c5070;
+            padding: 8px 12px;
+            border-radius: 5px;
+            min-width: 200px;
+            font-size: 0.95em;
+        }
+        .controls select:focus {
+            outline: none;
+            border-color: #79c0ff;
+            box-shadow: 0 0 5px rgba(121, 192, 255, 0.5);
+        }
+
+        /* --- CHART AREA --- */
+        #chartContainer {
+            width: 95%;
+            max-width: 1400px;
+            margin: auto;
+        }
+        #scatterPlotDiv {
+            border: 1px solid #2a3b60;
+            border-radius: 8px;
+            min-height: 600px;
+            background-color: #101828;
+            overflow: hidden;
+        }
+        .loader {
+            text-align: center;
+            font-size: 1.2em;
+            padding: 40px;
+            color: #a7c5f0;
+        }
+
+        /* --- METRICS GUIDE TABLE --- */
+        .metrics-guide-container {
+            width: 95%;
+            max-width: 1400px;
+            margin: 40px auto 20px auto;
+            padding: 20px;
+            background-color: rgba(20, 30, 55, 0.7);
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+            border: 1px solid #2a3b60;
+            color: #c0d0f0;
+        }
+        .metrics-guide-container h2 {
+            font-family: 'Orbitron', sans-serif;
+            color: #79c0ff;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+        .metrics-guide-container p {
+            line-height: 1.6;
+            margin-bottom: 15px;
+            font-size: 0.95em;
+        }
+        .metrics-guide-container code {
+            background-color: rgba(0,0,0,0.3);
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+            color: #9fceff;
+        }
+        .table-responsive {
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+        .metrics-guide-container table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        .metrics-guide-container th,
+        .metrics-guide-container td {
+            border: 1px solid #3c5070;
+            padding: 10px 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+        .metrics-guide-container th {
+            background-color: #1f2a40;
+            color: #a7c5f0;
+            font-weight: 600;
+        }
+        .metrics-guide-container td {
+            background-color: #141c33;
+            color: #c0d0f0;
+        }
+        .metrics-guide-container tr:nth-child(even) td {
+            background-color: #182138;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-navigation-links">
+        <a href="../hpcg_portal.html" class="nav-button portal-link" title="Back to Cosmic HPCG Navigator">
+            <svg class="nav-button-icon star" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279L12 19.445l-7.416 3.964L6.064 15.134 0 9.306l8.332-1.151L12 .587z"/>
+            </svg>
+            <span class="nav-button-text">Portal</span>
+        </a>
+        <a href="../fom/" class="nav-button scatter-link" title="View Scatter Plot Analysis">
+            <span class="nav-button-icon scatter"></span>
+            <span class="nav-button-text">Heatmap</span>
+        </a>
+    </div>    
+    <h1>HPCG Performance Scaling Explorer - Galactic Edition</h1>
+
+    <div class="controls">
+        <div class="control-group">
+            <label for="dataSource">Select Metric (Y-axis):</label>
+            <select id="dataSource">
+                <option value="rawFom" selected>Raw FOM (Gflops/sec)</option>
+                <option value="fomPerDollar">FOM (Gflops/sec per Dollar)</option>
+                <option value="gflopsSpmv">GFLOP/s: SpMV</option>
+                <option value="gflopsMg">GFLOP/s: MG (Multigrid)</option>
+                <option value="gflopsDdot">GFLOP/s: DDOT</option>
+                <option value="gflopsWaxpby">GFLOP/s: WAXPBY</option>
+                <option value="memBwTotal">Memory Bandwidth: Total (GB/s)</option>
+                <option value="memBwRead">Memory Bandwidth: Read (GB/s)</option>
+                <option value="memBwWrite">Memory Bandwidth: Write (GB/s)</option>
+                <option value="duration">Duration (seconds)</option>
+                <option value="totalCGIterations">Total CG Optimized Iterations</option>
+                <option value="memUsedTotalGbytes">Memory Used: Total (Gbytes)</option>
+                <option value="setupTimeSeconds">Setup Time (seconds)</option>
+                <option value="mpiAllreduceMax">MPI Allreduce: Max Time (sec)</option>
+                <option value="mpiAllreduceAvg">MPI Allreduce: Avg Time (sec)</option>
+                <option value="mpiAllreduceMin">MPI Allreduce: Min Time (sec)</option>
+                <option value="dimensionNx">Global Dimension: Nx</option>
+                <option value="dimensionNy">Global Dimension: Ny</option>
+                <option value="dimensionNz">Global Dimension: Nz</option>
+                <option value="threadsPerProcess">Threads Per Process</option>
+                <option value="procDimX">Processor Dimension: npx</option>
+                <option value="procDimY">Processor Dimension: npy</option>
+                <option value="procDimZ">Processor Dimension: npz</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label for="coreCountFilter">Filter by Cores (N):</label>
+            <select id="coreCountFilter">
+                <option value="all">All Core Counts</option>
+                <!-- Options will be populated dynamically -->
+            </select>
+        </div>
+    </div>
+
+    <div id="chartContainer">
+        <div id="scatterPlotDiv"><p class="loader">Aligning Star Charts... Stand by for scatter data...</p></div>
+    </div>
+
+    <div class="metrics-guide-container">
+        <h2>Understanding the Metrics (Weak Scaling Context)</h2>
+        <p>This study was run by setting a fixed local problem size per core/process. Instance types vary in their total core/process counts (`N`), which also defines the X-axis for the scatter plot. Comparing raw values is not always an "apples-to-apples" comparison for a fixed global problem size, but rather shows how performance scales. The following table explains the metrics available and how they might be interpreted in this context.</p>
+        <div class="table-responsive">
+             <table>
+                <thead>
+                    <tr>
+                        <th>Original Metric (from HPCG Output)</th>
+                        <th>Normalized Metric Name for Plot</th>
+                        <th>Normalization Formula (Conceptual)</th>
+                        <th>Expected Trend in Ideal Weak Scaling</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>GFLOP/s Summary::Raw SpMV=</code> (and other raw GFLOP/s)</td>
+                        <td>Per-Core SpMV GFLOP/s (or MG, DDOT, WAXPBY, Total)</td>
+                        <td><code>V(Raw_Metric_GFLOPs) / N</code></td>
+                        <td>Constant</td>
+                    </tr>
+                    <tr>
+                        <td><code>Final Summary::HPCG result is VALID with a GFLOP/s rating of=</code></td>
+                        <td>Per-Core Official FOM (GFLOP/s)</td>
+                        <td><code>V(Official_FOM) / N</code></td>
+                        <td>Constant</td>
+                    </tr>
+                    <tr>
+                        <td><code>Benchmark Time Summary::Total=</code></td>
+                        <td>Avg. Time per CG Iteration (approx.)</td>
+                        <td><code>V(Total_Time) / Total_Optimized_CG_Iterations</code></td>
+                        <td>Constant</td>
+                    </tr>
+                    <tr>
+                        <td><code>GB/s Summary::Raw Total B/W=</code> (and read/write)</td>
+                        <td>Per-Core Total Memory BW (GB/s) (or Read/Write)</td>
+                        <td><code>V(Total_BW) / N</code></td>
+                        <td>Constant</td>
+                    </tr>
+                    <tr>
+                        <td><code>Memory Use Information::Total memory used for data (Gbytes)=</code></td>
+                        <td>Per-Core Memory Used (GB)</td>
+                        <td><code>V(Memory_Used) / N</code></td>
+                        <td>Constant</td>
+                    </tr>
+                    <tr>
+                        <td><code>Setup Information::Setup Time=</code></td>
+                        <td>Per-Core Setup Time (sec)</td>
+                        <td><code>V(Setup_Time) / N</code></td>
+                        <td>Constant / Slow Growth</td>
+                    </tr>
+                    <tr>
+                        <td><code>DDOT Timing Variations::Max DDOT MPI_Allreduce time=</code></td>
+                        <td>Max MPI_Allreduce Time (sec)</td>
+                        <td><code>V(Max_Allreduce_Time)</code> (compare raw values)</td>
+                        <td>Slow Growth</td>
+                    </tr>
+                    <tr>
+                        <td><code>DDOT Timing Variations::Avg DDOT MPI_Allreduce time=</code></td>
+                        <td>Avg MPI_Allreduce Time (sec)</td>
+                        <td><code>V(Avg_Allreduce_Time)</code> (compare raw values)</td>
+                        <td>Slow Growth</td>
+                    </tr>
+                     <tr>
+                        <td><code>Benchmark Time Summary::DDOT=</code></td>
+                        <td>Avg. DDOT Time per CG Iteration (approx.)</td>
+                        <td><code>V(Total_DDOT_Time) / Total_Optimized_CG_Iterations</code></td>
+                        <td>Constant / Slow Growth</td>
+                    </tr>
+                    <tr>
+                        <td><code>Spectral Convergence Tests::Unpreconditioned::Maximum iteration count=</code></td>
+                        <td>Unpreconditioned CG Iterations</td>
+                        <td><code>V(Iteration_Count)</code> (compare raw values)</td>
+                        <td>Constant</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p><strong>Note:</strong> `V(Metric)` refers to the value of the metric, and `N` is the total number of Cores/MPI processes for the instance (from the JSON `coreMap`). "Total Optimized CG Iterations" is also extracted from the HPCG output. For metrics in the table labeled "Per-Core," you would perform the division by `N` *before* creating the JSON file if you want the Y-axis to show these normalized values. Otherwise, the Y-axis shows raw values, and the table guides interpretation. Metrics not explicitly listed as "Per-Core" in the table are generally plotted as their raw values.</p>
+    </div>
+
+    <script>
+        const dataSourceSelect = document.getElementById('dataSource');
+        const coreCountFilterSelect = document.getElementById('coreCountFilter');
+        const plotDiv = document.getElementById('scatterPlotDiv');
+
+        const dataSourcesConfig = { // Same as before, relying on 'coreMap' within each JSON
+            rawFom: { filePath: 'data_fom.json', loadedData: null },
+            fomPerDollar: { filePath: 'data_fom_per_dollar.json', loadedData: null },
+            dimensionNx: { filePath: 'data_dimension_nx.json', loadedData: null },
+            dimensionNy: { filePath: 'data_dimension_ny.json', loadedData: null },
+            dimensionNz: { filePath: 'data_dimension_nz.json', loadedData: null },
+            totalCGIterations: { filePath: 'data_total_cg_iterations.json', loadedData: null },
+            duration: { filePath: 'data_duration.json', loadedData: null },
+            gflopsDdot: { filePath: 'data_gflops_per_second_ddot.json', loadedData: null },
+            gflopsMg: { filePath: 'data_gflops_per_second_mg.json', loadedData: null },
+            gflopsSpmv: { filePath: 'data_gflops_per_second_spmv.json', loadedData: null },
+            gflopsWaxpby: { filePath: 'data_gflops_per_second_waxpby.json', loadedData: null },
+            memBwRead: { filePath: 'data_memory_bandwidth_across_kernels_read.json', loadedData: null },
+            memBwTotal: { filePath: 'data_memory_bandwidth_across_kernels_total.json', loadedData: null },
+            memBwWrite: { filePath: 'data_memory_bandwidth_across_kernels_write.json', loadedData: null },
+            memUsedTotalGbytes: { filePath: 'data_memory_used_data_total_gbytes.json', loadedData: null },
+            mpiAllreduceAvg: { filePath: 'data_mpi_allreduce_avg.json', loadedData: null },
+            mpiAllreduceMax: { filePath: 'data_mpi_allreduce_max.json', loadedData: null },
+            mpiAllreduceMin: { filePath: 'data_mpi_allreduce_min.json', loadedData: null },
+            procDimX: { filePath: 'data_processor_dimension_x.json', loadedData: null },
+            procDimY: { filePath: 'data_processor_dimension_y.json', loadedData: null },
+            procDimZ: { filePath: 'data_processor_dimension_z.json', loadedData: null },
+            setupTimeSeconds: { filePath: 'data_setup_time_seconds.json', loadedData: null },
+            threadsPerProcess: { filePath: 'data_threads_per_process.json', loadedData: null }
+        };
+
+        async function loadData(dataSourceKey) {
+            const config = dataSourcesConfig[dataSourceKey];
+            if (!config) {
+                console.error(`Config for dataSourceKey "${dataSourceKey}" not found.`);
+                plotDiv.innerHTML = `<p class="loader" style="color: red;">Error: Invalid data source.</p>`;
+                return null;
+            }
+            if (config.loadedData) { return config.loadedData; }
+
+            plotDiv.innerHTML = `<p class="loader">Loading data for ${dataSourceKey}...</p>`;
+            try {
+                const response = await fetch("../data/" + config.filePath);
+                if (!response.ok) { throw new Error(`Fetch failed: ${response.status} for ${config.filePath}`); }
+                const data = await response.json();
+
+                if (!data.coreMap) { // CRITICAL CHECK for coreMap
+                    console.error(`"coreMap" is MISSING in ${config.filePath}. Required for X-axis and filtering.`);
+                    plotDiv.innerHTML = `<p class="loader" style="color: red;">Data Error: 'coreMap' missing in ${data.name || config.filePath}.</p>`;
+                    return null;
+                }
+                if (!data.values) { data.values = []; } // Handle missing values gracefully
+                config.loadedData = data;
+                return data;
+            } catch (error) {
+                console.error("Data load error:", error);
+                plotDiv.innerHTML = `<p class="loader" style="color: #ff6b6b;">Load Error: ${error.message}.</p>`;
+                return null;
+            }
+        }
+
+        function getCoreCountForInstance(instanceName, coreMap) {
+            return coreMap ? coreMap[instanceName] || null : null;
+        }
+
+        function populateCoreCountFilterOptions(colLabels, coreMap) {
+            while (coreCountFilterSelect.options.length > 1) {
+                coreCountFilterSelect.remove(1);
+            }
+            if (!colLabels || !coreMap) {
+                coreCountFilterSelect.disabled = true;
+                coreCountFilterSelect.title = "Core count data unavailable for filtering.";
+                return;
+            }
+
+            const uniqueCoreCounts = new Set();
+            colLabels.forEach(label => {
+                const cores = getCoreCountForInstance(label, coreMap);
+                if (cores !== null && !isNaN(cores)) { uniqueCoreCounts.add(cores); }
+            });
+
+            const sortedCoreCounts = Array.from(uniqueCoreCounts).sort((a, b) => a - b);
+
+            if (sortedCoreCounts.length === 0) {
+                coreCountFilterSelect.disabled = true;
+                coreCountFilterSelect.title = "No distinct core counts found.";
+            } else {
+                coreCountFilterSelect.disabled = false;
+                coreCountFilterSelect.title = "Filter by Cores (N)";
+                sortedCoreCounts.forEach(coreVal => {
+                    const option = document.createElement('option');
+                    option.value = coreVal;
+                    option.textContent = `${coreVal} Cores`;
+                    coreCountFilterSelect.appendChild(option);
+                });
+            }
+        }
+
+        function drawScatterPlot(yAxisDataset, coreCountFilterVal) {
+            if (!yAxisDataset || !yAxisDataset.coreMap) { // Check for dataset and coreMap
+                plotDiv.innerHTML = `<p class="loader" style="color:red;">Plotting Error: Y-axis data or its 'coreMap' is missing.</p>`;
+                return;
+            }
+
+            const traces = [];
+            const uniqueInstanceTypes = new Set(yAxisDataset.colLabels);
+
+            uniqueInstanceTypes.forEach(instanceType => {
+                const x_values_N_cores = [];
+                const y_values_metric = [];
+                const text_values = [];
+
+                const colIndex = yAxisDataset.colLabels.indexOf(instanceType);
+                if (colIndex === -1) return;
+
+                const N_cores_for_instance = getCoreCountForInstance(instanceType, yAxisDataset.coreMap);
+                if (N_cores_for_instance === null) {
+                    console.warn(`Cores (N) not found for instance: ${instanceType}. Skipping.`);
+                    return;
+                }
+
+                if (coreCountFilterVal !== "all" && N_cores_for_instance !== parseInt(coreCountFilterVal)) {
+                    return; // Skip instance if it doesn't match filter
+                }
+
+                yAxisDataset.rowLabels.forEach((rowLabel, rowIndex) => {
+                    const yVal = yAxisDataset.values[rowIndex]?.[colIndex]; // Added optional chaining for safety
+                    if (yVal === undefined || yVal === null) return;
+
+                    x_values_N_cores.push(N_cores_for_instance);
+                    y_values_metric.push(yVal);
+                    text_values.push(
+                        `Instance: ${instanceType}<br>` +
+                        `Arch/Opt: ${rowLabel}<br>` +
+                        `Cores (N): ${N_cores_for_instance}<br>` +
+                        `${yAxisDataset.name || 'Metric Value'}: ${typeof yVal === 'number' ? yVal.toFixed(2) : yVal}`
+                    );
+                });
+
+                if (x_values_N_cores.length > 0) {
+                    traces.push({
+                        x: x_values_N_cores,
+                        y: y_values_metric,
+                        text: text_values,
+                        mode: 'markers', type: 'scatter', name: instanceType,
+                        hoverinfo: 'text', marker: { size: 10, opacity: 0.7 }
+                    });
+                }
+            });
+            
+            plotDiv.innerHTML = '';
+            if (traces.length === 0) {
+                plotDiv.innerHTML = `<p class="loader">No data points for current selection.</p>`;
+                return;
+            }
+
+            const layout = { /* ... (Layout remains the same as previous scatter plot) ... */
+                title: {
+                    text: `${yAxisDataset.name || 'Selected Metric'} vs. Number of Cores/Processes (N)`,
+                    font: { color: '#d0e0ff', size: 18 }, x: 0.5, xanchor: 'center'
+                },
+                height: 700,
+                xaxis: {
+                    title: 'Number of Cores / MPI Processes (N)',
+                    color: '#a7c5f0', gridcolor: '#1a2438', linecolor: '#3c5070',
+                },
+                yaxis: {
+                    title: yAxisDataset.name || 'Metric Value',
+                    color: '#a7c5f0', gridcolor: '#1a2438', linecolor: '#3c5070',
+                },
+                hovermode: 'closest',
+                legend: {
+                    font: { color: '#c0d0f0' }, bgcolor: 'rgba(11, 15, 34, 0.7)',
+                    bordercolor: '#2a3b60', borderwidth: 1
+                },
+                margin: { l: 100, r: 50, b: 100, t: 80, pad: 4 },
+                paper_bgcolor: '#0f162d', plot_bgcolor: '#141c33',
+                font: { family: 'Segoe UI, Tahoma, sans-serif', color: '#e0e6f0' }
+            };
+            Plotly.newPlot(plotDiv, traces, layout, {responsive: true});
+        }
+
+        async function updatePlotInterface() {
+            const selectedYAxisKey = dataSourceSelect.value;
+            const yAxisData = await loadData(selectedYAxisKey);
+            
+            if (yAxisData && yAxisData.coreMap) { // Ensure coreMap exists
+                const filterKey = `core-filter-for-${yAxisData.colLabels.join('-')}`;
+                if (coreCountFilterSelect.dataset.populatedFor !== filterKey) {
+                    const previouslySelectedCoreValue = coreCountFilterSelect.value;
+                    populateCoreCountFilterOptions(yAxisData.colLabels, yAxisData.coreMap);
+                    coreCountFilterSelect.dataset.populatedFor = filterKey;
+                    
+                    if (Array.from(coreCountFilterSelect.options).find(opt => opt.value === previouslySelectedCoreValue)) {
+                        coreCountFilterSelect.value = previouslySelectedCoreValue;
+                    } else {
+                        coreCountFilterSelect.value = 'all';
+                    }
+                }
+                drawScatterPlot(yAxisData, coreCountFilterSelect.value);
+            } else if (yAxisData && !yAxisData.coreMap) {
+                 plotDiv.innerHTML = `<p class="loader" style="color:red;">Data Error: 'coreMap' missing for metric ${yAxisData.name}.</p>`;
+            }
+        }
+
+        dataSourceSelect.addEventListener('change', updatePlotInterface);
+        coreCountFilterSelect.addEventListener('change', async () => {
+            const selectedYAxisKey = dataSourceSelect.value;
+            const yData = dataSourcesConfig[selectedYAxisKey].loadedData || await loadData(selectedYAxisKey);
+            if (yData && yData.coreMap) {
+                 drawScatterPlot(yData, coreCountFilterSelect.value);
+            }
+        });
+
+        async function initializeSystem() {
+            const initialYAxisKey = dataSourceSelect.value;
+            const initialYData = await loadData(initialYAxisKey);
+
+            if (initialYData && initialYData.coreMap) {
+                populateCoreCountFilterOptions(initialYData.colLabels, initialYData.coreMap);
+                coreCountFilterSelect.dataset.populatedFor = `core-filter-for-${initialYData.colLabels.join('-')}`;
+                drawScatterPlot(initialYData, coreCountFilterSelect.value);
+            } else if (initialYData && !initialYData.coreMap) {
+                 plotDiv.innerHTML = `<p class="loader" style="color:red;">Init Error: 'coreMap' missing in ${initialYData.name || initialYAxisKey}.</p>`;
+            } else if (!initialYData) {
+                 plotDiv.innerHTML = `<p class="loader" style="color:red;">Init Error: Could not load data for ${initialYAxisKey}.</p>`;
+            }
+        }
+        initializeSystem();
+    </script>
+</body>
+</html>
