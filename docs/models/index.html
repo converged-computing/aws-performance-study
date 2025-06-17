@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galactic Model Explorer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        .portal-home-link {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            display: flex; /* Align icon and text horizontally */
+            align-items: center; /* Vertically align icon and text */
+            padding: 8px 12px; /* Adjust padding for text */
+            border-radius: 20px; /* Pill shape */
+            text-decoration: none;
+            background-color: rgba(20, 30, 55, 0.6); /* Subtle background like controls */
+            border: 1px solid #2a3b60; /* Subtle border */
+            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .portal-home-link svg {
+            display: block;
+            width: 22px; /* Adjusted SVG size */
+            height: 22px;
+            color: #FFD700; /* Gold/Yellow star color */
+            margin-right: 8px; /* Space between star and text */
+            transition: transform 0.3s ease; /* For hover effect on star only */
+        }
+
+        .portal-home-text {
+            font-family: 'Orbitron', sans-serif; /* Sci-fi font for portal text */
+            font-size: 0.9em; /* Adjust as needed */
+            color: #ddeeff; /* Light text color */
+            font-weight: 500;
+            white-space: nowrap; /* Prevent text from wrapping */
+        }
+
+        .portal-home-link:hover {
+            background-color: rgba(42, 59, 96, 0.8); /* Darker background on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .portal-home-link:hover svg {
+            transform: rotate(25deg) scale(1.1); /* Rotate and scale star on link hover */
+        }
+
+        .portal-home-link:active {
+            transform: translateY(0px); /* Push back down on click */
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        /* Keyframes for a subtle starry background animation */
+        @keyframes starryNight {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Orbitron', sans-serif; /* Futuristic font */
+            background: linear-gradient(to bottom right, #0a0a2a, #1a1a3a); /* Dark blue/purple gradient */
+            color: #e0e0ff; /* Light bluish-white text */
+            text-shadow: 0 0 5px rgba(170, 200, 255, 0.5); /* Subtle glow */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            position: relative; /* Needed for z-index with pseudo-element */
+        }
+
+        /* Starry background effect using a pseudo-element */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Multiple background images for different star effects */
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 10%), /* Larger, diffuse stars */
+                radial-gradient(circle at 70% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 10%),
+                url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="5" height="5"><rect width="1" height="1" x="0" y="0" fill="rgba(255,255,255,0.2)"/><rect width="1" height="1" x="2" y="3" fill="rgba(255,255,255,0.2)"/></svg>'); /* Tiny, dense stars */
+            background-size: cover, cover, 5px 5px; /* Size for each background layer */
+            animation: starryNight 300s linear infinite; /* Slow background movement */
+            z-index: -1; /* Puts the stars behind the main content */
+        }
+
+        .container {
+            background-color: rgba(10, 10, 30, 0.8); /* Slightly transparent dark panel */
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 0 30px rgba(100, 150, 255, 0.4); /* Neon glow */
+            text-align: center;
+            max-width: 90%;
+            width: 800px; /* Max width for content */
+            margin-bottom: 20px;
+            border: 1px solid rgba(100, 150, 255, 0.2);
+            position: relative; /* For z-index of content */
+        }
+
+        h1 {
+            color: #99ccff; /* Brighter blue for title */
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px #99ccff;
+        }
+
+        .selector-group {
+            margin-bottom: 30px;
+        }
+
+        label {
+            font-size: 1.1em;
+            margin-right: 15px;
+            color: #bbddee;
+        }
+
+        select {
+            padding: 12px 18px;
+            border-radius: 8px;
+            background-color: #0d0d2d;
+            color: #ccffff; /* Cyan text for dropdown */
+            border: 2px solid #55aaff; /* Blue border */
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1em;
+            box-shadow: 0 0 15px rgba(85, 170, 255, 0.5); /* Glow effect */
+            transition: all 0.3s ease;
+            cursor: pointer;
+            -webkit-appearance: none; /* Remove default dropdown arrow for custom styling */
+            -moz-appearance: none;
+            appearance: none;
+            /* Custom dropdown arrow using SVG data URI */
+            background-image: url('data:image/svg+xml;utf8,<svg fill="%23ccffff" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 20px;
+        }
+
+        select:hover {
+            border-color: #99ddff;
+            box-shadow: 0 0 20px rgba(153, 221, 255, 0.7);
+        }
+
+        select option {
+            background-color: #0d0d2d;
+            color: #ccffff;
+        }
+
+        .image-display {
+            min-height: 400px; /* Ensure space even when no image is loaded */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px dashed rgba(100, 150, 255, 0.3);
+        }
+
+        #modelImage {
+            max-width: 100%;
+            height: auto;
+            max-height: 600px; /* Limit height of the image to prevent overflow */
+            border-radius: 8px;
+            box-shadow: 0 0 25px rgba(100, 200, 255, 0.3); /* Image glow */
+            transition: transform 0.3s ease-in-out; /* Smooth transition for scale */
+            /* Start hidden, but `displayModel` will show it on load */
+            /* If JS fails or takes time, this might flash. Better to manage with JS directly */
+            /* For initial load, we'll remove 'display: none;' */
+        }
+
+        #modelImage.loaded {
+            animation: fadeIn 0.5s ease-out; /* Apply fade-in animation on load */
+        }
+
+        /* Animation for image fade-in */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        #placeholderText {
+            color: #aaa;
+            font-style: italic;
+            display: none; /* Hidden by default, as an image will load */
+        }
+
+        footer {
+            margin-top: 30px;
+            font-size: 0.8em;
+            color: #8899aa;
+            text-align: center;
+            position: relative;
+            z-index: 1; /* Ensure footer is above starry background */
+        }
+    </style>
+</head>
+<body>
+    <a href="../" class="portal-home-link" title="Back to Cosmic HPCG Navigator">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="28px" height="28px">
+            <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279L12 19.445l-7.416 3.964L6.064 15.134 0 9.306l8.332-1.151L12 .587z"/>
+        </svg>
+        <span class="portal-home-text">Galaxy Portal</span>
+    </a>
+    <div class="container">
+        <h1>🌌 Galactic Model Performance Viewer 🚀</h1>
+
+        <div class="selector-group">
+            <label for="modelSelect">Select a Model:</label>
+            <select id="modelSelect">
+                <!-- Options will be populated by JavaScript -->
+            </select>
+        </div>
+
+        <div class="image-display">
+            <img id="modelImage" src="" alt="Selected Model Performance Plot"
+                 onerror="this.style.display='none'; document.getElementById('placeholderText').style.display='block';"
+                 onload="this.style.display='block'; document.getElementById('placeholderText').style.display='none'; this.classList.add('loaded');">
+            <p id="placeholderText">Select a model from the dropdown above to view its performance plot.</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 Interstellar Dinosaur Productions | <span style="font-style:italic; color:pink">Rawwr... the space dinosaur!</p>
+    </footer>
+
+    <script>
+        // Data for all your SVG models
+        const models = [
+            // Format: { displayName: "Metric Name (Model Type)", filePath: "filename.svg" }
+            { displayName: "Duration (Linear Regression)", filePath: "xhpcg_duration_linear_regression.svg" },
+            { displayName: "Duration (Random Forest)", filePath: "xhpcg_duration_random_forest.svg" },
+            { displayName: "Fom (Linear Regression)", filePath: "xhpcg_fom_linear_regression.svg" },
+            { displayName: "Fom (Random Forest)", filePath: "xhpcg_fom_random_forest.svg" },
+            { displayName: "Gflops Per Second Ddot (Linear Regression)", filePath: "xhpcg_gflops_per_second_ddot_linear_regression.svg" },
+            { displayName: "Gflops Per Second Ddot (Random Forest)", filePath: "xhpcg_gflops_per_second_ddot_random_forest.svg" },
+            { displayName: "Gflops Per Second Mg (Linear Regression)", filePath: "xhpcg_gflops_per_second_mg_linear_regression.svg" },
+            { displayName: "Gflops Per Second Mg (Random Forest)", filePath: "xhpcg_gflops_per_second_mg_random_forest.svg" },
+            { displayName: "Gflops Per Second Spmv (Linear Regression)", filePath: "xhpcg_gflops_per_second_spmv_linear_regression.svg" },
+            { displayName: "Gflops Per Second Spmv (Random Forest)", filePath: "xhpcg_gflops_per_second_spmv_random_forest.svg" },
+            { displayName: "Gflops Per Second Waxpby (Linear Regression)", filePath: "xhpcg_gflops_per_second_waxpby_linear_regression.svg" },
+            { displayName: "Gflops Per Second Waxpby (Random Forest)", filePath: "xhpcg_gflops_per_second_waxpby_random_forest.svg" },
+            { displayName: "Memory Bandwidth Across Kernels Read (Linear Regression)", filePath: "xhpcg_memory_bandwidth_across_kernels_read_linear_regression.svg" },
+            { displayName: "Memory Bandwidth Across Kernels Read (Random Forest)", filePath: "xhpcg_memory_bandwidth_across_kernels_read_random_forest.svg" },
+            { displayName: "Memory Bandwidth Across Kernels Total (Linear Regression)", filePath: "xhpcg_memory_bandwidth_across_kernels_total_linear_regression.svg" },
+            { displayName: "Memory Bandwidth Across Kernels Total (Random Forest)", filePath: "xhpcg_memory_bandwidth_across_kernels_total_random_forest.svg" },
+            { displayName: "Memory Bandwidth Across Kernels Write (Linear Regression)", filePath: "xhpcg_memory_bandwidth_across_kernels_write_linear_regression.svg" },
+            { displayName: "Memory Bandwidth Across Kernels Write (Random Forest)", filePath: "xhpcg_memory_bandwidth_across_kernels_write_random_forest.svg" },
+            { displayName: "Mpi Allreduce Avg (Linear Regression)", filePath: "xhpcg_mpi_allreduce_avg_linear_regression.svg" },
+            { displayName: "Mpi Allreduce Avg (Random Forest)", filePath: "xhpcg_mpi_allreduce_avg_random_forest.svg" },
+            { displayName: "Mpi Allreduce Max (Linear Regression)", filePath: "xhpcg_mpi_allreduce_max_linear_regression.svg" },
+            { displayName: "Mpi Allreduce Max (Random Forest)", filePath: "xhpcg_mpi_allreduce_max_random_forest.svg" },
+            { displayName: "Mpi Allreduce Min (Linear Regression)", filePath: "xhpcg_mpi_allreduce_min_linear_regression.svg" },
+            { displayName: "Mpi Allreduce Min (Random Forest)", filePath: "xhpcg_mpi_allreduce_min_random_forest.svg" },
+            { displayName: "Setup Time Seconds (Linear Regression)", filePath: "xhpcg_setup_time_seconds_linear_regression.svg" },
+            { displayName: "Setup Time Seconds (Random Forest)", filePath: "xhpcg_setup_time_seconds_random_forest.svg" },
+            { displayName: "Total Cg Iterations (Linear Regression)", filePath: "xhpcg_total_cg_iterations_linear_regression.svg" },
+            { displayName: "Total Cg Iterations (Random Forest)", filePath: "xhpcg_total_cg_iterations_random_forest.svg" }
+        ];
+
+        // Sort the models alphabetically by display name
+        models.sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+        // Function to populate the dropdown and set initial selection
+        function populateDropdown() {
+            const selectElement = document.getElementById('modelSelect');
+
+            // Add the default "Choose..." option
+            const defaultOption = document.createElement('option');
+            defaultOption.value = "";
+            defaultOption.textContent = "-- Choose Your Celestial Model --";
+            selectElement.appendChild(defaultOption);
+
+            // Populate with actual model options
+            models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model.filePath;
+                option.textContent = model.displayName;
+                selectElement.appendChild(option);
+            });
+
+            // Set the dropdown to the first actual model
+            if (models.length > 0) {
+                // Select the first actual model option (index 1 because index 0 is the default placeholder)
+                selectElement.value = models[0].filePath;
+            }
+
+            // Add event listener after populating
+            selectElement.addEventListener('change', displayModel);
+        }
+
+        // Function to display the selected model's SVG
+        function displayModel() {
+            const selectElement = document.getElementById('modelSelect');
+            const imageElement = document.getElementById('modelImage');
+            const placeholderText = document.getElementById('placeholderText');
+            const selectedFile = selectElement.value;
+
+            // Remove the 'loaded' class to re-trigger animation if changing images
+            imageElement.classList.remove('loaded');
+
+            if (selectedFile) {
+                imageElement.src = selectedFile;
+                // The onerror and onload handlers on the <img> tag manage display logic
+                // They will ensure the image is displayed and placeholder hidden upon successful load
+            } else {
+                imageElement.src = ""; // Clear image source
+                imageElement.style.display = 'none'; // Hide the broken image icon
+                placeholderText.style.display = 'block'; // Show placeholder text
+            }
+        }
+
+        // Run functions when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            populateDropdown(); // Populate dropdown and set initial selection
+            displayModel();     // Load and display the initial image
+        });
+    </script>
+</body>
+</html>

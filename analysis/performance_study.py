@@ -20,32 +20,19 @@ insert_query = """INSERT INTO performance_data (cloud, analysis_name, environmen
 nodes, metric_name, metric_value, context) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 """
 
-# Manually created color palette
-cloud_prefixes = [
-    "azure/aks",
-    "aws/eks",
-    "google/gke",
-    "google/compute-engine",
-    "aws/parallel-cluster",
-    "on-premises/dane",
-    "azure/cyclecloud",
-    "on-premises/lassen",
-]
-
-cloud_prefixes.sort()
-
-colors = {
-    "azure/aks": "#004589",
-    "aws/parallel-cluster": "#FF9900",
-    "aws/eks": "#CC5500",
-    "google/gke": "#FBBC04",
-    "google/compute-engine": "#EA4335",
-    "on-premises/a": "gray",
-    "on-premises/dane": "gray",
-    "azure/cyclecloud": "#0080ff",
-    "on-premises/lassen": "gray",
-    "on-premises/b": "gray",
-}
+default_create_table_sql = """
+CREATE TABLE IF NOT EXISTS performance_data (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  cloud TEXT NOT NULL,
+  analysis_name TEXT NOT NULL,
+  environment TEXT NOT NULL,
+  environment_type TEXT NOT NULL,
+  nodes TEXT,
+  metric_name TEXT NOT NULL,
+  metric_value REAL NOT NULL,
+  context TEXT
+)
+"""
 
 # For optimization
 optim_names = ["O0", "O3", "Os", "Ofast", "O2", "O1", "Og"]
@@ -184,30 +171,17 @@ class Database:
         except Exception as e:
             print(f"An error occurred: {e}")
 
-    def create_table(self):
+    def create_table(self, create_table_sql=None):
         """
         Creates the performance data eBPF table in an SQLite database.
 
         I started parsing with pandas and realized it took a LONG time
         to process.
         """
+        create_table_sql = create_table_sql or default_create_table_sql
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        cursor.execute(
-            """
-          CREATE TABLE IF NOT EXISTS performance_data (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            cloud TEXT NOT NULL,
-            analysis_name TEXT NOT NULL,
-            environment TEXT NOT NULL,
-            environment_type TEXT NOT NULL,
-            nodes TEXT,
-            metric_name TEXT NOT NULL,
-            metric_value REAL NOT NULL,
-            context TEXT
-          )
-        """
-        )
+        cursor.execute(create_table_sql)
         conn.commit()
         conn.close()
         print(f"Table 'performance_data' created (or already exists) in {self.db_path}")
@@ -416,6 +390,80 @@ class ProblemSizeParser(ResultParser):
         ]
         self.idx += 1
 
+arches_lookup = {
+    "c6a.16xlarge": "AMD EPYC 7R13 x86_64",
+    "c6i.16xlarge": "Intel Xeon 8375C (Ice Lake)",
+    "c6id.12xlarge": "Intel Xeon 8375C (Ice Lake)",  # 'i' for Intel, 'd' for local NVMe
+    "c6in.12xlarge": "Intel Xeon 8375C (Ice Lake)",  # 'i' for Intel, 'n' for network
+    "c7g.16xlarge": "AWS Graviton3 ARM",
+    "d3.4xlarge": "Intel Xeon Platinum 8259 (Cascade Lake)",  # Storage-optimized, typically Intel
+    "hpc6a.48xlarge": "AMD EPYC 7R13 x86_64",
+    "hpc7g.16xlarge": "AWS Graviton3 ARM",
+    "inf2.8xlarge": "AMD EPYC 7R13 x86_64",
+    "m6a.12xlarge": "AMD EPYC 7R13 x86_64",
+    "m6i.12xlarge": "Intel Xeon 8375C (Ice Lake)",
+    "t3.2xlarge": "Intel Skylake E5 2686 v5",
+    "t3a.2xlarge": "AMD EPYC 7571 x86_64",
+    "m6g.12xlarge": "AWS Graviton2 ARM",
+    "c7a.12xlarge": "AMD EPYC 9R14 x86_64",
+    "i4i.8xlarge": "Intel Xeon 8375C (Ice Lake)",
+    "m6id.12xlarge": "Intel Xeon 8375C (Ice Lake)",
+    "r6a.12xlarge": "AMD EPYC 7R13 X86_64",
+    "m7g.16xlarge": "AWS Graviton3 ARM",
+    "t4g.2xlarge": "AWS Graviton2 ARM",
+    "r7iz.8xlarge": "Intel Sapphine Rapids",
+    "r6i.8xlarge": "Intel Xeon 8375C (Ice Lake)",
+}
+
+
+core_lookup = {
+    "hpc7g.16xlarge": 64,
+    "m7g.16xlarge": 64,
+    "c7g.16xlarge": 64,
+    "m6g.12xlarge": 48,
+    "t4g.2xlarge": 8,
+    "c7a.12xlarge": 48,
+    "t3.2xlarge": 4,
+    "c6in.12xlarge": 24,
+    "i4i.8xlarge": 16,
+    "r6i.8xlarge": 16,
+    "m6i.12xlarge": 24,
+    "r7iz.8xlarge": 16,
+    "c6i.16xlarge": 32,
+    "d3.4xlarge": 8,
+    "c6id.12xlarge": 24,
+    "m6id.12xlarge": 24,
+    "t3a.2xlarge": 4,
+    "hpc6a.48xlarge": 96,
+    "c6a.16xlarge": 32,
+    "m6a.12xlarge": 24,
+    "r6a.12xlarge": 24,
+}
+
+cost_lookup = {
+    "c6a.16xlarge": 2.448,
+    "c6i.16xlarge": 2.72,
+    "c6id.12xlarge": 2.4192,
+    "c6in.12xlarge": 2.7216,
+    "c7g.16xlarge": 2.32,
+    "d3.4xlarge": 1.998,
+    "hpc6a.48xlarge": 2.88,
+    "hpc7g.16xlarge": 1.6832,
+    "inf2.8xlarge": 1.9679,
+    "m6a.12xlarge": 2.0736,
+    "m6i.12xlarge": 2.304,
+    "t3.2xlarge": 0.3328,
+    "t3a.2xlarge": 0.3008,
+    "m6g.12xlarge": 1.848,
+    "c7a.12xlarge": 2.4634,
+    "i4i.8xlarge": 2.746,
+    "m6id.12xlarge": 2.8476,
+    "r6a.12xlarge": 2.7216,
+    "m7g.16xlarge": 2.6112,
+    "t4g.2xlarge": 0.2688,
+    "r7iz.8xlarge": 2.976,
+    "r6i.8xlarge": 2.016,
+}
 
 def find_section(lines, key):
     """

@@ -28,105 +28,6 @@ compats = {
     "instances": {},
 }
 
-arches_lookup = {
-    "c6a.16xlarge": "AMD EPYC 7R13 x86_64",
-    "c6i.16xlarge": "Intel Xeon 8375C (Ice Lake)",
-    "c6id.12xlarge": "Intel Xeon 8375C (Ice Lake)",  # 'i' for Intel, 'd' for local NVMe
-    "c6in.12xlarge": "Intel Xeon 8375C (Ice Lake)",  # 'i' for Intel, 'n' for network
-    "c7g.16xlarge": "AWS Graviton3 ARM",
-    "d3.4xlarge": "Intel Xeon Platinum 8259 (Cascade Lake)",  # Storage-optimized, typically Intel
-    "hpc6a.48xlarge": "AMD EPYC 7R13 x86_64",
-    "hpc7g.16xlarge": "AWS Graviton3 ARM",
-    "inf2.8xlarge": "AMD EPYC 7R13 x86_64",
-    "m6a.12xlarge": "AMD EPYC 7R13 x86_64",
-    "m6i.12xlarge": "Intel Xeon 8375C (Ice Lake)",
-    "t3.2xlarge": "Intel Skylake E5 2686 v5",
-    "t3a.2xlarge": "AMD EPYC 7571 x86_64",
-    "m6g.12xlarge": "AWS Graviton2 ARM",
-    "c7a.12xlarge": "AMD EPYC 9R14 x86_64",
-    "i4i.8xlarge": "Intel Xeon 8375C (Ice Lake)",
-    "m6id.12xlarge": "Intel Xeon 8375C (Ice Lake)",
-    "r6a.12xlarge": "AMD EPYC 7R13 X86_64",
-    "m7g.16xlarge": "AWS Graviton3 ARM",
-    "t4g.2xlarge": "AWS Graviton2 ARM",
-    "r7iz.8xlarge": "Intel Sapphine Rapids",
-    "r6i.8xlarge": "Intel Xeon 8375C (Ice Lake)",
-}
-
-core_lookup = {
-    "hpc7g.16xlarge": 64,
-    "m7g.16xlarge": 64,
-    "c7g.16xlarge": 64,
-    "m6g.12xlarge": 48,
-    "t4g.2xlarge": 8,
-    "c7a.12xlarge": 24,
-    "t3.2xlarge": 4,
-    "c6in.12xlarge": 24,
-    "i4i.8xlarge": 16,
-    "r6i.8xlarge": 16,
-    "m6i.12xlarge": 24,
-    "r7iz.8xlarge": 16,
-    "c6i.16xlarge": 32,
-    "d3.4xlarge": 8,
-    "c6id.12xlarge": 24,
-    "m6id.12xlarge": 24,
-    "t3a.2xlarge": 4,
-    "hpc6a.48xlarge": 96,
-    "c6a.16xlarge": 32,
-    "m6a.12xlarge": 24,
-    "r6a.12xlarge": 24,
-}
-
-core_lookup = {
-    "hpc7g.16xlarge": 64,
-    "m7g.16xlarge": 64,
-    "c7g.16xlarge": 64,
-    "m6g.12xlarge": 48,
-    "t4g.2xlarge": 8,
-    "c7a.12xlarge": 48,
-    "t3.2xlarge": 4,
-    "c6in.12xlarge": 24,
-    "i4i.8xlarge": 16,
-    "r6i.8xlarge": 16,
-    "m6i.12xlarge": 24,
-    "r7iz.8xlarge": 16,
-    "c6i.16xlarge": 32,
-    "d3.4xlarge": 8,
-    "c6id.12xlarge": 24,
-    "m6id.12xlarge": 24,
-    "t3a.2xlarge": 4,
-    "hpc6a.48xlarge": 96,
-    "c6a.16xlarge": 32,
-    "m6a.12xlarge": 24,
-    "r6a.12xlarge": 24,
-}
-
-cost_lookup = {
-    "c6a.16xlarge": 2.448,
-    "c6i.16xlarge": 2.72,
-    "c6id.12xlarge": 2.4192,
-    "c6in.12xlarge": 2.7216,
-    "c7g.16xlarge": 2.32,
-    "d3.4xlarge": 1.998,
-    "hpc6a.48xlarge": 2.88,
-    "hpc7g.16xlarge": 1.6832,
-    "inf2.8xlarge": 1.9679,
-    "m6a.12xlarge": 2.0736,
-    "m6i.12xlarge": 2.304,
-    "t3.2xlarge": 0.3328,
-    "t3a.2xlarge": 0.3008,
-    "m6g.12xlarge": 1.848,
-    "c7a.12xlarge": 2.4634,
-    "i4i.8xlarge": 2.746,
-    "m6id.12xlarge": 2.8476,
-    "r6a.12xlarge": 2.7216,
-    "m7g.16xlarge": 2.6112,
-    "t4g.2xlarge": 0.2688,
-    "r7iz.8xlarge": 2.976,
-    "r6i.8xlarge": 2.016,
-}
-
-
 def get_parser():
     parser = argparse.ArgumentParser(
         description="Run analysis",
@@ -262,6 +163,8 @@ def parse_data(indir, outdir, files):
 def parse_metrics(indir, outdir, files):
     """
     This goes through one metric at a time, and yields the data frame to export.
+    
+    These will be many of our Y values.
     """
     # Get the benchmark total times and FOMs (each of these is an iteration, should be 3)
     metrics = {
@@ -366,7 +269,7 @@ def parse_metrics(indir, outdir, files):
                 continue
             # Divide by the number of procs of the instance type
             if metric in divide_by_n:
-                value = float(row.value) / core_lookup[row.env]
+                value = float(row.value) / ps.core_lookup[row.env]
             elif metric in raw_values:
                 value = float(row.value)
             elif metric in divide_by_iterations:
@@ -417,7 +320,7 @@ def parse_metrics(indir, outdir, files):
             "reversescale": True,
             "zmin": df.min().min(),
             "zmax": df.max().max(),
-            "coreMap": core_lookup,
+            "coreMap": ps.core_lookup,
         }
         ps.write_json(
             fom_export, os.path.join(data_outdir, "json", f"data_{metric}.json")
@@ -531,7 +434,7 @@ def plot_results(df, outdir):
         for instance, data_frame in instances.items():
             for i, row in data_frame.iterrows():
                 fom_cost_df.loc[row.problem_size, row.env] = (
-                    row.value / cost_lookup[row.env]
+                    row.value / ps.cost_lookup[row.env]
                 )
                 fom_df.loc[row.problem_size, row.env] = float(row.value)
                 idx += 1
@@ -581,9 +484,9 @@ def plot_results(df, outdir):
         "reversescale": True,
         "zmin": fom_cost_df.min().min(),
         "zmax": fom_cost_df.max().max(),
-        "coreMap": core_lookup,
+        "coreMap": ps.core_lookup,
     }
-    ps.write_json(fom_per_dollar, os.path.join(outdir, "data_fom_per_dollar.json"))
+    ps.write_json(fom_per_dollar, os.path.join(outdir, "heatmap", "json", "data_fom_per_dollar.json"))
 
     row_idx = fom_df.index[g2.dendrogram_row.reordered_ind]
     col_idx = fom_df.columns[g2.dendrogram_col.reordered_ind]
@@ -597,9 +500,9 @@ def plot_results(df, outdir):
         "reversescale": True,
         "zmin": fom_df.min().min(),
         "zmax": fom_df.max().max(),
-        "coreMap": core_lookup,
+        "coreMap": ps.core_lookup,
     }
-    ps.write_json(fom_overall, os.path.join(outdir, "data_raw_fom.json"))
+    ps.write_json(fom_overall, os.path.join(outdir, "heatmap", "json", "data_raw_fom.json"))
 
 
 
@@ -632,7 +535,7 @@ def plot_compatible(df, instance, img_outdir):
         "heatmap": ordered_df,
         "optimizations": rows,
         "microarches": cols,
-        "platform": arches_lookup[instance],
+        "platform": ps.arches_lookup[instance],
     }
     fig = plt.figure(figsize=(12, 8))
     axes = []
