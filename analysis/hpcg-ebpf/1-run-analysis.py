@@ -77,7 +77,7 @@ core_lookup = {
     "r6a.12xlarge": 24,
 }
 
-proc_lookup = {
+core_lookup = {
     "hpc7g.16xlarge": 64,
     "m7g.16xlarge": 64,
     "c7g.16xlarge": 64,
@@ -366,7 +366,7 @@ def parse_metrics(indir, outdir, files):
                 continue
             # Divide by the number of procs of the instance type
             if metric in divide_by_n:
-                value = float(row.value) / proc_lookup[row.env]
+                value = float(row.value) / core_lookup[row.env]
             elif metric in raw_values:
                 value = float(row.value)
             elif metric in divide_by_iterations:
