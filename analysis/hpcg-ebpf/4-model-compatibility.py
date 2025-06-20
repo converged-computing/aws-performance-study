@@ -5,6 +5,7 @@ import sys
 import json
 import os
 import pandas
+import shap
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -232,21 +233,22 @@ def parse_data(indir, outdir):
     # These have been normalized to account for weak scaling
     x_files = ["hpcg_processes.csv", "hpcg_threads_per_process.csv"]
     y_files = [
-        "hpcg_mpi_allreduce_avg.csv",
-        "hpcg_fom.csv",
-        "hpcg_total_cg_iterations.csv",
-        "hpcg_memory_used_data_total_gbytes.csv",
-        "hpcg_memory_bandwidth_across_kernels_write.csv",
-        "hpcg_gflops_per_second_ddot.csv",
-        "hpcg_gflops_per_second_mg.csv",
-        "hpcg_setup_time_seconds.csv",
-        "hpcg_memory_bandwidth_across_kernels_read.csv",
-        "hpcg_memory_bandwidth_across_kernels_total.csv",
-        "hpcg_gflops_per_second_spmv.csv",
-        "hpcg_mpi_allreduce_max.csv",
-        "hpcg_duration.csv",
-        "hpcg_mpi_allreduce_min.csv",
-        "hpcg_gflops_per_second_waxpby.csv",
+        #"hpcg_mpi_allreduce_avg.csv",
+        #"hpcg_fom.csv",
+        #"hpcg_total_cg_iterations.csv",
+        #"hpcg_memory_used_data_total_gbytes.csv",
+        #"hpcg_memory_bandwidth_across_kernels_write.csv",
+        #"hpcg_gflops_per_second_ddot.csv",
+        #"hpcg_gflops_per_second_mg.csv",
+        #"hpcg_setup_time_seconds.csv",
+        #"hpcg_memory_bandwidth_across_kernels_read.csv",
+        #"hpcg_memory_bandwidth_across_kernels_total.csv",
+        #"hpcg_gflops_per_second_spmv.csv",
+        #"hpcg_mpi_allreduce_max.csv",
+        #"hpcg_duration.csv",
+        #"hpcg_mpi_allreduce_min.csv",
+        #"hpcg_gflops_per_second_waxpby.csv",
+        "hpcg_fom_per_dollar.csv",
     ]
 
     # First generate lookups for futex, cpu, and threads/cores
@@ -301,6 +303,9 @@ def parse_data(indir, outdir):
         for _, row in y_df.iterrows():
             if row.metric == "compatible":
                 continue
+
+            if "dollar" in filename:
+                row.metric = "fom_per_dollar"
 
             # This is the Y to predict
             y_actual.append(float(row.value))
@@ -397,6 +402,8 @@ def parse_data(indir, outdir):
         plt.savefig(
             os.path.join(models_dir, f"xhpcg_{row.metric}_linear_regression.svg")
         )
+        plt.clf()
+        plt.close()
 
         # Random forest
         pipeline = Pipeline(
@@ -439,6 +446,8 @@ def parse_data(indir, outdir):
         plt.grid(True)
         plt.tight_layout()
         plt.savefig(os.path.join(models_dir, f"xhpcg_{row.metric}_random_forest.svg"))
+        plt.clf()
+        plt.close()
 
         # Save data with y_preds added
         df["y_actual"] = y_actual

@@ -259,6 +259,11 @@ def parse_metrics(indir, outdir, files):
         if metric == "total_cg_iterations":
             total_cg_iterations = p.df
         p.df.to_csv(os.path.join(data_outdir, "csv", f"hpcg_{metric}.csv"))
+        # Parse the "science per unit cost"
+        if metric == "fom":
+            cost_df = p.df.copy()
+            cost_df.value = [float(x.value / ps.cost_lookup[x.env]) for _, x in cost_df.iterrows()]
+            cost_df.to_csv(os.path.join(data_outdir, "csv", f"hpcg_fom_per_dollar.csv"))
         instances = p.df.env.unique().tolist()
         build_config = p.df.problem_size.unique().tolist()
         df = pandas.DataFrame(0.0, columns=instances, index=list(build_config))
@@ -487,7 +492,6 @@ def plot_results(df, outdir):
         "coreMap": ps.core_lookup,
     }
     ps.write_json(fom_per_dollar, os.path.join(outdir, "heatmap", "json", "data_fom_per_dollar.json"))
-
     row_idx = fom_df.index[g2.dendrogram_row.reordered_ind]
     col_idx = fom_df.columns[g2.dendrogram_col.reordered_ind]
     values = [list(x) for x in list(fom_df.loc[row_idx, col_idx].values)]
