@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHAP Insights Viewer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;700&family=Orbitron:wght@400;500;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --space-bg-deep: #0f0c29; /* Deep purple/blue space */
+            --space-bg-nebula: #24243e; /* Darker nebula purple */
+            --space-bg-stars: #0a0a1f; /* Starfield dark blue/purple */
+            --space-bg-panel: #1c1c30; /* Dark panel purple/grey */
+            --space-text-primary: #e8eaf6; /* Light lavender/white */
+            --space-text-secondary: #b0bec5; /* Comet dust grey */
+            --space-accent-hyperdrive: #00e5ff; /* Cyan hyperdrive */
+            --space-accent-alert: #ff5252; /* Alert red */
+            --space-accent-info: #ab47bc; /* Info purple - new */
+            --space-border-color: #3949ab; /* Indigo border */
+        }
+        .portal-home-link {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            display: flex; /* Align icon and text horizontally */
+            align-items: center; /* Vertically align icon and text */
+            padding: 8px 12px; /* Adjust padding for text */
+            border-radius: 20px; /* Pill shape */
+            text-decoration: none;
+            background-color: rgba(20, 30, 55, 0.6); /* Subtle background like controls */
+            border: 1px solid #2a3b60; /* Subtle border */
+            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .portal-home-link svg {
+            display: block;
+            width: 22px; /* Adjusted SVG size */
+            height: 22px;
+            color: #FFD700; /* Gold/Yellow star color */
+            margin-right: 8px; /* Space between star and text */
+            transition: transform 0.3s ease; /* For hover effect on star only */
+        }
+
+        .portal-home-text {
+            font-family: 'Orbitron', sans-serif; /* Sci-fi font for portal text */
+            font-size: 0.9em; /* Adjust as needed */
+            color: #ddeeff; /* Light text color */
+            font-weight: 500;
+            white-space: nowrap; /* Prevent text from wrapping */
+        }
+
+        .portal-home-link:hover {
+            background-color: rgba(42, 59, 96, 0.8); /* Darker background on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .portal-home-link:hover svg {
+            transform: rotate(25deg) scale(1.1); /* Rotate and scale star on link hover */
+        }
+
+        .portal-home-link:active {
+            transform: translateY(0px); /* Push back down on click */
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--space-bg-stars);
+            background-image: 
+                radial-gradient(var(--space-text-secondary) 0.5px, transparent 0.5px),
+                radial-gradient(var(--space-text-secondary) 0.5px, var(--space-bg-stars) 0.5px);
+            background-size: 35px 35px, 35px 35px; /* Slightly larger stars */
+            background-position: 0 0, 17px 17px;
+            color: var(--space-text-primary);
+            line-height: 1.7;
+        }
+        .container-wrapper {
+            max-width: 1600px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        .container {
+            background-color: var(--space-bg-panel);
+            padding: 30px 40px;
+            border-radius: 15px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.6), 0 0 25px rgba(var(--space-accent-hyperdrive-rgb, 0, 229, 255), 0.2);
+            border: 1px solid var(--space-border-color);
+        }
+        h1 { /* Main Page Title */
+            font-family: 'Exo 2', sans-serif; /* New header font */
+            color: var(--space-text-primary);
+            text-align: center;
+            margin-bottom: 40px;
+            font-weight: 300; /* Lighter weight for Exo 2 */
+            font-size: 2.8em;
+            letter-spacing: 1.5px;
+            text-shadow: 0 0 15px rgba(var(--space-accent-hyperdrive-rgb, 0, 229, 255), 0.6);
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--space-border-color);
+        }
+        h2 { /* For Metric Title */
+            font-family: 'Orbitron', sans-serif;
+            color: var(--space-accent-hyperdrive);
+            font-weight: 500; /* Orbitron looks better bolder */
+            border-bottom: 1px solid var(--space-border-color);
+            padding-bottom: 15px;
+            margin-top: 40px;
+            margin-bottom: 25px;
+            letter-spacing: 1px;
+        }
+        h3 { /* For Plot Subtitles */
+            color: var(--space-text-secondary);
+            font-weight: 400;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+        label {
+            font-weight: 500;
+            margin-right: 15px;
+            color: var(--space-text-secondary);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9em;
+            text-transform: uppercase;
+        }
+        select {
+            padding: 12px 18px;
+            border-radius: 8px;
+            border: 1px solid var(--space-border-color);
+            background-color: var(--space-bg-stars);
+            color: var(--space-text-primary);
+            min-width: 300px;
+            margin-bottom: 30px;
+            font-family: 'Roboto', sans-serif;
+            font-size: 1.05em;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+        }
+        select:focus {
+            outline: none;
+            border-color: var(--space-accent-hyperdrive);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3), 0 0 0 3px rgba(var(--space-accent-hyperdrive-rgb, 0, 229, 255), 0.4);
+        }
+        .plot-container {
+            margin-bottom: 40px;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #ffffff;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .metric-display img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: 4px;
+        }
+        .description { /* For SHAP analysis */
+            background-color: rgba(var(--space-accent-hyperdrive-rgb, 0, 229, 255), 0.07);
+            border-left: 5px solid var(--space-accent-hyperdrive);
+            padding: 20px 25px;
+            margin-top: 20px;
+            border-radius: 8px;
+            color: var(--space-text-primary);
+        }
+        .description p, .description ul {
+            margin-top: 0;
+            margin-bottom: 12px;
+        }
+        .description ul {
+            padding-left: 25px;
+        }
+        .description li {
+            margin-bottom: 8px;
+        }
+        .description code {
+            background-color: var(--space-bg-stars);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-family: Consolas, 'Courier New', monospace;
+            color: var(--space-accent-hyperdrive);
+            border: 1px solid var(--space-border-color);
+        }
+        .info { /* Your general info box - now purple */
+            background-color: rgba(var(--space-accent-info-rgb, 171, 71, 188), 0.15); /* Purple accent */
+            border-left: 5px solid var(--space-accent-info);
+            color: var(--space-text-primary);
+            padding: 15px 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+        .metric-section {
+            display: none;
+        }
+        .metric-section.active {
+            display: block;
+        }
+        #loadingMessage, #errorMessage {
+            text-align: center;
+            padding: 30px;
+            font-size: 1.3em;
+            color: var(--space-text-secondary);
+            font-family: 'Orbitron', sans-serif;
+        }
+        #errorMessage {
+            color: var(--space-accent-alert);
+        }
+    </style>
+</head>
+<body>
+    <a href="../" class="portal-home-link" title="Back to Cosmic HPCG Navigator">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="28px" height="28px">
+            <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279L12 19.445l-7.416 3.964L6.064 15.134 0 9.306l8.332-1.151L12 .587z"/>
+        </svg>
+        <span class="portal-home-text">Galaxy Portal</span>
+    </a>
+    <div class="container-wrapper">
+        <div class="container">
+            <h1>👾 SHAP Insights Viewer</h1>
+            <div class='description info'>
+             <p>A dot in the plot is a single observation (row in dataset) which means an instance type, optimization, and micro-architecture. In total (between test and train) there are about 5k experiments, and each experiment result is derived from 3 runs. These are instances on AWS. The Y-axis here is features, these are from node feature discovery. The <a href="https://github.com/shap/shap" target="_blank">Shapley value</a> is how much the feature for the specific observation (experiment row) pushed the model's prediction away from the average prediction. When you see a "cat" prefix of a feature, it means it was categorical and one-hot encoded. Please see the <a href="https://converged-computing.org/aws-performance-study/fom/" target="_blank">Performance Cluster</a> to understand how the features were normalized.</p>
+            </div>
+
+            <label for="metricSelector">Chart Navigation:</label>
+            <select id="metricSelector" disabled>
+                <option value="">Scanning systems...</option>
+            </select>
+
+            <div id="metricDisplayArea">
+                <p id="loadingMessage">Calibrating telemetry...</p>
+                <p id="errorMessage" style="display:none;"></p>
+                <!-- Metric plots and descriptions will be shown here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setRgbVar(cssVarName, cssVarRgbName) {
+            const colorVal = getComputedStyle(document.documentElement).getPropertyValue(cssVarName).trim();
+            let rgb = '255, 255, 255'; 
+            if (colorVal.startsWith('#')) {
+                if (colorVal.length === 7) { // #RRGGBB
+                   rgb = `${parseInt(colorVal.slice(1, 3), 16)}, ${parseInt(colorVal.slice(3, 5), 16)}, ${parseInt(colorVal.slice(5, 7), 16)}`;
+                } else if (colorVal.length === 4) { // #RGB
+                   rgb = `${parseInt(colorVal.charAt(1) + colorVal.charAt(1), 16)}, ${parseInt(colorVal.charAt(2) + colorVal.charAt(2), 16)}, ${parseInt(colorVal.charAt(3) + colorVal.charAt(3), 16)}`;
+                }
+            } else if (colorVal.startsWith('rgb')) {
+                const match = colorVal.match(/\d+/g);
+                if (match && match.length >= 3) rgb = match.slice(0, 3).join(', ');
+            }
+            document.documentElement.style.setProperty(cssVarRgbName, rgb);
+        }
+        setRgbVar('--space-accent-hyperdrive', '--space-accent-hyperdrive-rgb');
+        setRgbVar('--space-accent-alert', '--space-accent-alert-rgb');
+        setRgbVar('--space-accent-info', '--space-accent-info-rgb'); // For the purple info box
+
+        const selector = document.getElementById('metricSelector');
+        const displayArea = document.getElementById('metricDisplayArea');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        let allMetricsData = [];
+
+        function buildMetricSections(metricsData) {
+            selector.innerHTML = '';
+            if (metricsData.length === 0) {
+                selector.innerHTML = '<option value="">No charts found</option>';
+                loadingMessage.textContent = 'No data available in metric-data.json.';
+                return;
+            }
+
+            metricsData.forEach((metric) => {
+                const option = document.createElement('option');
+                option.value = metric.id;
+                option.textContent = metric.displayName;
+                selector.appendChild(option);
+
+                const metricSection = document.createElement('div');
+                metricSection.classList.add('metric-section');
+                metricSection.id = `section-${metric.id}`;
+
+                const overallTitle = document.createElement('h2');
+                overallTitle.textContent = `Telemetry Analysis: ${metric.displayName}`;
+                metricSection.appendChild(overallTitle);
+
+                const dotPlotDiv = document.createElement('div');
+                const dotPlotTitle = document.createElement('h3');
+                dotPlotTitle.textContent = 'Dot Plot (Swarm Analysis)';
+                dotPlotDiv.appendChild(dotPlotTitle);
+                const dotPlotContainer = document.createElement('div');
+                dotPlotContainer.classList.add('plot-container');
+                const dotImg = document.createElement('img');
+                dotImg.src = metric.dotImagePath;
+                dotImg.alt = `SHAP summary dot plot for ${metric.displayName}`;
+                dotPlotContainer.appendChild(dotImg);
+                dotPlotDiv.appendChild(dotPlotContainer)
+                metricSection.appendChild(dotPlotDiv);
+
+                const barPlotDiv = document.createElement('div');
+                const barPlotTitle = document.createElement('h3');
+                barPlotTitle.textContent = 'Bar Plot (Impact Magnitude)';
+                barPlotDiv.appendChild(barPlotTitle);
+                const barPlotContainer = document.createElement('div');
+                barPlotContainer.classList.add('plot-container');
+                const barImg = document.createElement('img');
+                barImg.src = metric.barImagePath;
+                barImg.alt = `SHAP summary bar plot for ${metric.displayName}`;
+                barPlotContainer.appendChild(barImg);
+                barPlotDiv.appendChild(barPlotContainer);
+                metricSection.appendChild(barPlotDiv);
+
+                const descriptionDiv = document.createElement('div');
+                descriptionDiv.classList.add('description');
+                descriptionDiv.id = `description-content-${metric.id}`;
+                descriptionDiv.innerHTML = metric.description || "<p><em>No analysis available for this data stream.</em></p>";
+                metricSection.appendChild(descriptionDiv);
+                displayArea.appendChild(metricSection);
+            });
+            selector.disabled = false;
+            loadingMessage.style.display = 'none';
+        }
+
+        function showMetric(metricId) {
+            document.querySelectorAll('.metric-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            const selectedSection = document.getElementById(`section-${metricId}`);
+            if (selectedSection) {
+                selectedSection.classList.add('active');
+            }
+        }
+        
+        async function loadMetrics() {
+            try {
+                const response = await fetch('metric-data.json'); 
+                if (!response.ok) {
+                    throw new Error(`Signal Disrupted! Status: ${response.status} - Cannot retrieve metric-data.json`);
+                }
+                allMetricsData = await response.json();
+                buildMetricSections(allMetricsData);
+
+                if (allMetricsData.length > 0) {
+                    showMetric(allMetricsData[0].id);
+                } else {
+                     loadingMessage.textContent = 'Data logs empty in metric-data.json.';
+                }
+
+            } catch (error) {
+                console.error("Critical Error loading metric-data.json:", error);
+                loadingMessage.style.display = 'none';
+                errorMessage.textContent = `SYSTEM ERROR: ${error.message}. Check metric-data.json integrity.`;
+                errorMessage.style.display = 'block';
+                selector.disabled = true;
+                selector.innerHTML = '<option value="">Connection Lost</option>';
+            }
+        }
+
+        selector.addEventListener('change', (event) => {
+            if (event.target.value) {
+                showMetric(event.target.value);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', loadMetrics);
+    </script>
+
+</body>
+</html>

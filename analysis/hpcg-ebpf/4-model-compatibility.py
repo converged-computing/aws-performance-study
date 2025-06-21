@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import numpy
 import argparse
 import sys
 import json
@@ -223,7 +224,7 @@ def parse_data(indir, outdir):
     features, columns = load_node_features()
 
     # We will also include optimization, cores, and micro-arch
-    columns += ["optimization", "cores", "threads", "micro_arch"]
+    columns += ["optimization", "threads", "micro_arch"]
 
     # And futex wait, cpu running and waiting
     # TODO do we want to add ratio or too correlated?
@@ -233,21 +234,21 @@ def parse_data(indir, outdir):
     # These have been normalized to account for weak scaling
     x_files = ["hpcg_processes.csv", "hpcg_threads_per_process.csv"]
     y_files = [
-        #"hpcg_mpi_allreduce_avg.csv",
-        #"hpcg_fom.csv",
-        #"hpcg_total_cg_iterations.csv",
-        #"hpcg_memory_used_data_total_gbytes.csv",
-        #"hpcg_memory_bandwidth_across_kernels_write.csv",
-        #"hpcg_gflops_per_second_ddot.csv",
-        #"hpcg_gflops_per_second_mg.csv",
-        #"hpcg_setup_time_seconds.csv",
-        #"hpcg_memory_bandwidth_across_kernels_read.csv",
-        #"hpcg_memory_bandwidth_across_kernels_total.csv",
-        #"hpcg_gflops_per_second_spmv.csv",
-        #"hpcg_mpi_allreduce_max.csv",
-        #"hpcg_duration.csv",
-        #"hpcg_mpi_allreduce_min.csv",
-        #"hpcg_gflops_per_second_waxpby.csv",
+        "hpcg_mpi_allreduce_avg.csv",
+        "hpcg_fom.csv",
+        "hpcg_total_cg_iterations.csv",
+        "hpcg_memory_used_data_total_gbytes.csv",
+        "hpcg_memory_bandwidth_across_kernels_write.csv",
+        "hpcg_gflops_per_second_ddot.csv",
+        "hpcg_gflops_per_second_mg.csv",
+        "hpcg_setup_time_seconds.csv",
+        "hpcg_memory_bandwidth_across_kernels_read.csv",
+        "hpcg_memory_bandwidth_across_kernels_total.csv",
+        "hpcg_gflops_per_second_spmv.csv",
+        "hpcg_mpi_allreduce_max.csv",
+        "hpcg_duration.csv",
+        "hpcg_mpi_allreduce_min.csv",
+        "hpcg_gflops_per_second_waxpby.csv",
         "hpcg_fom_per_dollar.csv",
     ]
 
@@ -280,8 +281,8 @@ def parse_data(indir, outdir):
                 thread_lookup[family] = row.value
 
     # These features need one hot encoding
+    # Don't include cores - we normalized data by count
     numerical_columns = [
-        "cores",
         "threads",
         "futex_waiting_ns",
         "cpu_waiting_ns",
@@ -293,6 +294,8 @@ def parse_data(indir, outdir):
     if not os.path.exists(models_dir):
         os.makedirs(models_dir)
 
+    top_features_json = {}
+    interface_data = []
     seen = set()
     # Now generate models!
     for filename in y_files:
@@ -333,7 +336,6 @@ def parse_data(indir, outdir):
             cpu_waiting = cpu_lookup[row.filename].get("cpu_waiting_ns")
             feature_vector += [
                 opt,
-                proc_lookup[family],
                 thread_lookup[family],
                 micro_arch,
                 futex_time,
@@ -453,7 +455,84 @@ def parse_data(indir, outdir):
         df["y_actual"] = y_actual
         df.to_csv(os.path.join(models_dir, f"features_{filename}"))
 
-        # TODO need model with feature selection
+        # Which features are meaningful?
+        preprocessor = pipeline.named_steps["preprocessor"]
+        regressor = pipeline.named_steps["regressor"]
+        X_train_transformed_background = preprocessor.transform(X_train)
+        X_test_transformed = preprocessor.transform(X_test)
+
+        # This will issue an error later if it isn't a float array
+        X_train_transformed_background = X_train_transformed_background.toarray()
+        X_train_transformed_background = X_train_transformed_background.astype(
+            numpy.float32
+        )
+        feature_names_out = preprocessor.get_feature_names_out()
+
+        explainer = shap.TreeExplainer(regressor, data=X_train_transformed_background)
+        X_test_transformed = X_test_transformed.toarray()
+        X_test_transformed = X_test_transformed.astype(numpy.float32)
+        X_test_transformed_df = pandas.DataFrame(
+            X_test_transformed, columns=feature_names_out
+        )
+
+        # DRUMROLL!
+        shap_values = explainer.shap_values(X_test_transformed_df)
+
+        # Get relative contribution of top features
+        shap_sum = numpy.abs(shap_values).mean(axis=0)
+        indices = numpy.argsort(shap_sum)[::-1]
+        top_n_features = [feature_names_out[i] for i in indices[:5]]
+
+        plt.figure(figsize=(12, 10))
+        shap.summary_plot(
+            shap_values, X_test_transformed_df, show=False, plot_type="bar"
+        )
+        metric = " ".join(
+            [x.capitalize() for x in row.metric.replace("_", " ").split(" ")]
+        )
+        metric = metric.replace("fom", "FOM")
+        plt.subplots_adjust(left=0.35, bottom=0.15, right=1.1)
+        plt.title(f"SHAP Global Feature Importance for {metric}", loc="left")
+        plt.savefig(
+            os.path.join(models_dir, f"shap_summary_{row.metric}_bar.svg"),
+            bbox_inches="tight",
+        )
+        plt.clf()
+        plt.close()
+
+        plt.figure(figsize=(12, 10))
+        shap.summary_plot(shap_values, X_test_transformed_df, show=False)
+        plt.title(f"SHAP Global Feature Importance for {metric}", loc="left")
+        plt.subplots_adjust(left=0.35, bottom=0.15)
+        plt.savefig(
+            os.path.join(models_dir, f"shap_summary_{row.metric}_dot.svg"),
+            bbox_inches="tight",
+        )
+        plt.clf()
+        plt.close()
+        interface_data.append(
+            {
+                "id": row.metric,
+                "displayName": metric,
+                "dotImagePath": f"shap_summary_{row.metric}_dot.svg",
+                "barImagePath": f"shap_summary_{row.metric}_bar.svg",
+            }
+        )
+        top_features = "\n" + "\n".join(top_n_features)
+        print(f"Top SHAP features for {metric}: {top_features}")
+        top_features_json[row.metric] = top_n_features
+        # for feature_name in top_n_features:
+        #    plt.figure()
+        #    shap.dependence_plot(feature_name, shap_values, X_test_transformed_df, interaction_index="auto", show=False)
+        #    # You can also specify a particular feature name for `interaction_index`.
+        #    plt.title(f"SHAP Dependence Plot for {metric} and '{feature_name}'")
+        #    plt.tight_layout()
+        #    plt.savefig(os.path.join(models_dir, f"shap_dependence_{feature_name.replace(' ', '_').replace('/', '_')}.png"))
+        #    plt.clf()
+        #    plt.close()
+
+    ps.write_json(top_features_json, os.path.join(models_dir, "top-features.json"))
+    ps.write_json(interface_data, os.path.join(models_dir, "metric-data.json"))
 
 
 if __name__ == "__main__":
