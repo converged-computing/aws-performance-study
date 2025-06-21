@@ -23,45 +23,45 @@
             top: 20px;
             left: 20px;
             z-index: 1000;
-            display: flex; /* Align icon and text horizontally */
-            align-items: center; /* Vertically align icon and text */
-            padding: 8px 12px; /* Adjust padding for text */
-            border-radius: 20px; /* Pill shape */
+            display: flex; 
+            align-items: center; 
+            padding: 8px 12px; 
+            border-radius: 20px; 
             text-decoration: none;
-            background-color: rgba(20, 30, 55, 0.6); /* Subtle background like controls */
-            border: 1px solid #2a3b60; /* Subtle border */
+            background-color: rgba(20, 30, 55, 0.6); 
+            border: 1px solid #2a3b60; 
             transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
         }
 
         .portal-home-link svg {
             display: block;
-            width: 22px; /* Adjusted SVG size */
+            width: 22px; 
             height: 22px;
-            color: #FFD700; /* Gold/Yellow star color */
-            margin-right: 8px; /* Space between star and text */
-            transition: transform 0.3s ease; /* For hover effect on star only */
+            color: #FFD700;
+            margin-right: 8px; 
+            transition: transform 0.3s ease; 
         }
 
         .portal-home-text {
-            font-family: 'Orbitron', sans-serif; /* Sci-fi font for portal text */
-            font-size: 0.9em; /* Adjust as needed */
-            color: #ddeeff; /* Light text color */
+            font-family: 'Orbitron', sans-serif; 
+            font-size: 0.9em; 
+            color: #ddeeff; 
             font-weight: 500;
-            white-space: nowrap; /* Prevent text from wrapping */
+            white-space: nowrap; 
         }
 
         .portal-home-link:hover {
-            background-color: rgba(42, 59, 96, 0.8); /* Darker background on hover */
-            transform: translateY(-2px); /* Slight lift effect */
+            background-color: rgba(42, 59, 96, 0.8); 
+            transform: translateY(-2px); 
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
 
         .portal-home-link:hover svg {
-            transform: rotate(25deg) scale(1.1); /* Rotate and scale star on link hover */
+            transform: rotate(25deg) scale(1.1); 
         }
 
         .portal-home-link:active {
-            transform: translateY(0px); /* Push back down on click */
+            transform: translateY(0px); 
             box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         }
 
@@ -73,7 +73,7 @@
             background-image: 
                 radial-gradient(var(--space-text-secondary) 0.5px, transparent 0.5px),
                 radial-gradient(var(--space-text-secondary) 0.5px, var(--space-bg-stars) 0.5px);
-            background-size: 35px 35px, 35px 35px; /* Slightly larger stars */
+            background-size: 35px 35px, 35px 35px; 
             background-position: 0 0, 17px 17px;
             color: var(--space-text-primary);
             line-height: 1.7;
@@ -90,29 +90,29 @@
             box-shadow: 0 0 50px rgba(0,0,0,0.6), 0 0 25px rgba(var(--space-accent-hyperdrive-rgb, 0, 229, 255), 0.2);
             border: 1px solid var(--space-border-color);
         }
-        h1 { /* Main Page Title */
-            font-family: 'Exo 2', sans-serif; /* New header font */
+        h1 { 
+            font-family: 'Exo 2', sans-serif;
             color: var(--space-text-primary);
             text-align: center;
             margin-bottom: 40px;
-            font-weight: 300; /* Lighter weight for Exo 2 */
+            font-weight: 300; 
             font-size: 2.8em;
             letter-spacing: 1.5px;
             text-shadow: 0 0 15px rgba(var(--space-accent-hyperdrive-rgb, 0, 229, 255), 0.6);
             padding-bottom: 20px;
             border-bottom: 1px solid var(--space-border-color);
         }
-        h2 { /* For Metric Title */
+        h2 { 
             font-family: 'Orbitron', sans-serif;
             color: var(--space-accent-hyperdrive);
-            font-weight: 500; /* Orbitron looks better bolder */
+            font-weight: 500; 
             border-bottom: 1px solid var(--space-border-color);
             padding-bottom: 15px;
             margin-top: 40px;
             margin-bottom: 25px;
             letter-spacing: 1px;
         }
-        h3 { /* For Plot Subtitles */
+        h3 { 
             color: var(--space-text-secondary);
             font-weight: 400;
             margin-bottom: 15px;
@@ -158,7 +158,7 @@
             margin-right: auto;
             border-radius: 4px;
         }
-        .description { /* For SHAP analysis */
+        .description {
             background-color: rgba(var(--space-accent-hyperdrive-rgb, 0, 229, 255), 0.07);
             border-left: 5px solid var(--space-accent-hyperdrive);
             padding: 20px 25px;
@@ -184,7 +184,7 @@
             color: var(--space-accent-hyperdrive);
             border: 1px solid var(--space-border-color);
         }
-        .info { /* Your general info box - now purple */
+        .info { 
             background-color: rgba(var(--space-accent-info-rgb, 171, 71, 188), 0.15); /* Purple accent */
             border-left: 5px solid var(--space-accent-info);
             color: var(--space-text-primary);
@@ -221,7 +221,7 @@
         <div class="container">
             <h1>👾 SHAP Insights Viewer</h1>
             <div class='description info'>
-             <p>A dot in the plot is a single observation (row in dataset) which means an instance type, optimization, and micro-architecture. In total (between test and train) there are about 5k experiments, and each experiment result is derived from 3 runs. These are instances on AWS. The Y-axis here is features, these are from node feature discovery. The <a href="https://github.com/shap/shap" target="_blank">Shapley value</a> is how much the feature for the specific observation (experiment row) pushed the model's prediction away from the average prediction. When you see a "cat" prefix of a feature, it means it was categorical and one-hot encoded. Please see the <a href="https://converged-computing.org/aws-performance-study/fom/" target="_blank">Performance Cluster</a> to understand how the features were normalized.</p>
+             <p>A dot in the plot is a single observation (row in dataset) which means an instance type, optimization, and micro-architecture. In total (between test and train) there are about 5k experiments, and each experiment result is derived from 3 runs. These are instances on AWS. The Y-axis here is features, these are from node feature discovery. The <a style="color:aqua" href="https://github.com/shap/shap" target="_blank">Shapley value</a> is how much the feature for the specific observation (experiment row) pushed the model's prediction away from the average prediction. When you see a "cat" prefix of a feature, it means it was categorical and one-hot encoded. Please see the <a style="color:aqua" href="https://converged-computing.org/aws-performance-study/fom/" target="_blank">Performance Cluster</a> to understand how the features were normalized.</p>
             </div>
 
             <label for="metricSelector">Chart Navigation:</label>
@@ -255,7 +255,7 @@
         }
         setRgbVar('--space-accent-hyperdrive', '--space-accent-hyperdrive-rgb');
         setRgbVar('--space-accent-alert', '--space-accent-alert-rgb');
-        setRgbVar('--space-accent-info', '--space-accent-info-rgb'); // For the purple info box
+        setRgbVar('--space-accent-info', '--space-accent-info-rgb'); 
 
         const selector = document.getElementById('metricSelector');
         const displayArea = document.getElementById('metricDisplayArea');
