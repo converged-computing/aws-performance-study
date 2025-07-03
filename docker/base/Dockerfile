@@ -183,7 +183,7 @@ RUN apt-get update && \
 #    wget https://download.open-mpi.org/release/open-mpi/v4.1/openmpi-4.1.2.tar.gz && \
 #    tar -xzvf openmpi-4.1.2.tar.gz && \
 #    cd openmpi-4.1.2 && \
-#    ./configure --with-cuda --with-ofi=/usr/local --prefix=/usr/local/pancakes && \
+#    ./configure --with-libfabric --prefix=${PWD}/install && \
 #    make && make install
 
 # Install oras for saving artifacts

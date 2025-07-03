@@ -13,11 +13,51 @@ Install node feature discovery:
 kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref=v0.17.3
 ```
 
-Export the NFD features, and that's it!
+Edit the configmap to be:
+
+```
+kind: ConfigMap
+apiVersion: v1
+data:
+  nfd-worker.conf: |
+    core:
+      labelWhiteList:
+        ".*": "true"
+```
+```
+kubectl edit configmap -n node-feature-discovery nfd-worker-conf-c2mbm9t788 
+```
+
+Recreate pods:
+
+```
+kubectl delete pods -n node-feature-discovery -l app=nfd-worker
+```
+
+Note that the update above only provides us with ~127 features, so not enough or the full set.
 
 ```bash
 kubectl get nodes -o json | jq '.items[].metadata.labels' > node-features.json
 kubectl get nodes -o json > nodes.json
+```
+
+## Node Raw Features
+
+```bash
+# For each of these files, do the sequence below
+kubectl apply -f ./deploy/nfd-installer.yaml
+kubectl delete -f ./deploy/nfd-installer.yaml
+kubectl apply -f ./deploy/nfd-installer-arm.yaml
+```
+```
+for pod in $(kubectl get pods -o json | jq -r .items[].metadata.name)
+  do
+  mkdir -p ./features/${pod}/
+  kubectl cp ${pod}:/opt/shared/ ./features/${pod}/
+  kubectl get pod -o json $pod > ./features/${pod}/pod.json
+  node=$(kubectl get pods -o=custom-columns=PODNAME:.metadata.name,NODENAME:.spec.nodeName $pod | awk 'NR > 1 {print $2}')
+  kubectl get node $node -o json > ./features/$pod/node.json
+done
 ```
 
 ## Clean Up

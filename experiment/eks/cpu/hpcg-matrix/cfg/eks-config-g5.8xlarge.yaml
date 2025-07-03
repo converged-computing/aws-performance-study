@@ -2,7 +2,7 @@ apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
 metadata:
-  name: hpcg-test
+  name: hpcg-test-2
   region: us-east-2
   version: "1.32"
 
@@ -11,6 +11,10 @@ managedNodeGroups:
   - name: workers
     availabilityZones: ["us-east-2b"]
     instanceType: g5.8xlarge
+    amiFamily: AmazonLinux2023
+    labels:
+      nodegroup-type: gpu-nodes
+      nvidia.com/gpu: "true" # Common label used by workloads    
     volumeSize: 150
     volumeType: gp2
     minSize: 1
