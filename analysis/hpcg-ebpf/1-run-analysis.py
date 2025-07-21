@@ -28,6 +28,7 @@ compats = {
     "instances": {},
 }
 
+
 def get_parser():
     parser = argparse.ArgumentParser(
         description="Run analysis",
@@ -65,8 +66,12 @@ def main():
     # Find input files (skip anything with test)
     files = ps.find_inputs(indir, "hpcg.out")
 
+    # Also include on premises results
+    on_prem = "../../experiment/on-premises/results/logs/"
+    files += [os.path.join(on_prem, x) for x in os.listdir(on_prem)]
+
     # Don't include within-instance run
-    files = [x for x in files if 'within-instance' not in x]
+    files = [x for x in files if "within-instance" not in x]
 
     # Create outdirs for images - stay organized!
     img_outdir = os.path.join(outdir, "img")
@@ -101,10 +106,51 @@ def get_ordered_matrix_and_labels(df_matrix):
     return df_ordered.values.tolist(), ordered_rows, ordered_cols
 
 
+def add_onprem_hpcg_result(p, indir, filename, ebpf=None, gpu=False, metrics=None):
+    if metrics is None:
+        metrics = {
+            "fom": "Final Summary::HPCG result",
+            "duration": "Benchmark Time Summary::Total",
+        }
+
+    for env_name in os.listdir(filename):
+        compatible = True
+        build_path = os.path.join(filename, env_name)
+        hpcg_results = [x for x in os.listdir(build_path) if x.startswith("HPCG")]
+        if not hpcg_results:
+            compatible = False
+            p.add_result("compatible", False, env_name, filename=build_path)
+            continue
+        p.add_result("compatible", True, env_name, filename=build_path)
+        for hpcg_result in hpcg_results:
+            hpcg_result = os.path.join(build_path, hpcg_result)
+            exp = ps.ExperimentNameParser(hpcg_result, indir)
+            instance = os.path.basename(filename)
+            p.set_context("on-premises", instance, "cpu", exp.size)
+            item = ps.read_file(hpcg_result)
+            lines = item.split("\n")
+            others = {}
+            for key, prefix in metrics.items():
+                values = [float(x.rsplit("=", 1)[-1]) for x in lines if prefix in x]
+                others[key] = values
+
+            for key, values in others.items():
+                # The ordering is consistent between lists
+                for iteration, value in enumerate(values):
+                    p.add_result(
+                        key, value, env_name, filename=hpcg_result, iteration=iteration
+                    )
+    return p
+
+
 def add_hpcg_result(p, indir, filename, ebpf=None, gpu=False, metrics=None):
     """
     Add a new hpcg result
     """
+    if "on-premises" in filename:
+        return add_onprem_hpcg_result(
+            p, indir, filename=filename, ebpf=ebpf, gpu=gpu, metrics=metrics
+        )
     exp = ps.ExperimentNameParser(filename, indir)
 
     # Sanity check the files we found
@@ -163,7 +209,7 @@ def parse_data(indir, outdir, files):
 def parse_metrics(indir, outdir, files):
     """
     This goes through one metric at a time, and yields the data frame to export.
-    
+
     These will be many of our Y values.
     """
     # Get the benchmark total times and FOMs (each of these is an iteration, should be 3)
@@ -262,7 +308,9 @@ def parse_metrics(indir, outdir, files):
         # Parse the "science per unit cost"
         if metric == "fom":
             cost_df = p.df.copy()
-            cost_df.value = [float(x.value / ps.cost_lookup[x.env]) for _, x in cost_df.iterrows()]
+            cost_df.value = [
+                float(x.value / ps.cost_lookup[x.env]) for _, x in cost_df.iterrows()
+            ]
             cost_df.to_csv(os.path.join(data_outdir, "csv", f"hpcg_fom_per_dollar.csv"))
         instances = p.df.env.unique().tolist()
         build_config = p.df.problem_size.unique().tolist()
@@ -285,6 +333,9 @@ def parse_metrics(indir, outdir, files):
                     & (total_cg_iterations.filename == row.filename)
                 ]
                 if iters.shape[0] != 1:
+                    import IPython
+
+                    IPython.embed()
                     raise ValueError(
                         f"Found more than one iteration count for results {row}, this should not happen."
                     )
@@ -491,7 +542,10 @@ def plot_results(df, outdir):
         "zmax": fom_cost_df.max().max(),
         "coreMap": ps.core_lookup,
     }
-    ps.write_json(fom_per_dollar, os.path.join(outdir, "heatmap", "json", "data_fom_per_dollar.json"))
+    ps.write_json(
+        fom_per_dollar,
+        os.path.join(outdir, "heatmap", "json", "data_fom_per_dollar.json"),
+    )
     row_idx = fom_df.index[g2.dendrogram_row.reordered_ind]
     col_idx = fom_df.columns[g2.dendrogram_col.reordered_ind]
     values = [list(x) for x in list(fom_df.loc[row_idx, col_idx].values)]
@@ -506,8 +560,9 @@ def plot_results(df, outdir):
         "zmax": fom_df.max().max(),
         "coreMap": ps.core_lookup,
     }
-    ps.write_json(fom_overall, os.path.join(outdir, "heatmap", "json", "data_raw_fom.json"))
-
+    ps.write_json(
+        fom_overall, os.path.join(outdir, "heatmap", "json", "data_raw_fom.json")
+    )
 
 
 def plot_compatible(df, instance, img_outdir):

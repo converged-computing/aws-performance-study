@@ -413,6 +413,13 @@ arches_lookup = {
     "t4g.2xlarge": "AWS Graviton2 ARM",
     "r7iz.8xlarge": "Intel Sapphine Rapids",
     "r6i.8xlarge": "Intel Xeon 8375C (Ice Lake)",
+    "poodle4": "Intel Xeon 9480",
+    "borax26": "Intel Xeon E5-2695",
+    "boraxo17": "Intel Xeon Gold 6140 ",
+    "corona190": "AMD Rome",
+    "tioga25": "AMD Trento",
+    "ruby1432": "Intel Xeon CLX-8276L",
+    "dane1345": "Intel Sapphine Rapids",
 }
 
 
@@ -438,6 +445,13 @@ core_lookup = {
     "c6a.16xlarge": 32,
     "m6a.12xlarge": 24,
     "r6a.12xlarge": 24,
+    "poodle4": 56,
+    "borax26": 36,
+    "boraxo17": 36,
+    "corona190": 48,
+    "tioga25": 64,
+    "ruby1432": 56,
+    'dane1345':  56,
 }
 
 cost_lookup = {
@@ -463,6 +477,13 @@ cost_lookup = {
     "t4g.2xlarge": 0.2688,
     "r7iz.8xlarge": 2.976,
     "r6i.8xlarge": 2.016,
+    "poodle4": 1.5,
+    "borax26": 2.772,
+    "boraxo17": 2.772,
+    "corona190": 1.2144,
+    "tioga25": 5.7472,
+    "ruby1432": 0.3584,
+    'dane1345':  0.3584,
 }
 
 def find_section(lines, key):

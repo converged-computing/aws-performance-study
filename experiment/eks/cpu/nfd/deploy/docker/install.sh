@@ -1,5 +1,6 @@
 #!/bin/bash 
 
+sleep infinity
 apt-get update && apt-get install -y git wget build-essential || yum update -y && yum install -y git wget which make
 
 architecture=$(uname -m)
@@ -10,9 +11,11 @@ which go || (
     wget https://go.dev/dl/go1.24.4.linux-amd64.tar.gz
   rm -rf /usr/local/go && tar -C /usr/local -xzf go1.24.4.linux-amd64.tar.gz
   elif [[ "$architecture" == "armv7l" || "$architecture" == "aarch64" || "$architecture" == "arm" ]]; then
-  wget https://go.dev/dl/go1.24.4.linux-arm64.tar.gz
-  rm -rf /usr/local/go && tar -C /usr/local -xzf go1.24.4.linux-arm64.tar.gz
-fi
+    wget https://go.dev/dl/go1.24.4.linux-arm64.tar.gz
+    rm -rf /usr/local/go && tar -C /usr/local -xzf go1.24.4.linux-arm64.tar.gz
+   export GOOS=linux
+   export GOARCH=arm64
+  fi
 )
 
 which nfd || (
@@ -20,7 +23,9 @@ which nfd || (
   git clone -b add-cli-export https://github.com/vsoch/node-feature-discovery /opt/node-feature-discovery
  
   cd /opt/node-feature-discovery
-  go mod download && make build && mv ./bin/* /usr/local/bin
+  go mod download
+  make build || go build -v -o bin/ ./cmd/*
+  mv ./bin/* /usr/local/bin
 )
 
 nfd export features --path /opt/shared/features-$(hostname).json
