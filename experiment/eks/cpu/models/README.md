@@ -7,6 +7,8 @@ This experiment will compare two cases in an effort to maximize FOM.
 
 For this experiment, we would want to show that using the model improves the overall FOM at a rate that is significant. First, create the cluster that can autoscale. It has one set of "sticky nodes" to install things to.
 
+## 1. Create Cluster
+
 ```bash
 eksctl create cluster --config-file ./eks-config.yaml 
 aws eks update-kubeconfig --region us-east-1 --name nfd-cluster
@@ -18,34 +20,31 @@ Note that we are using an artifact that specifies random is OK. This is how the 
 oras push ghcr.io/compspec/ocifit-k8s-compatibility:ml-example-with-random ./compatibility-artifact.json:application/vnd.oci.image.model-compatibilities.v1+json
 ```
 
+## 2. Enable Autoscaling
+
 Install the autoscaler:
 
 ```bash
 kubectl apply -f eks-autoscaler.yaml
 ```
 
-Instance node selectors will be added that trigger an autoscaler. The ocifit-k8s images should already be built and deployed to a public registry. You'll need the certificate manager.
+Instance node selectors will be added that trigger an autoscaler. 
+
+## 3. Setup Cluster
+
+The ocifit-k8s images should already be built and deployed to a public registry. You'll need the certificate manager.
 
 ```bash
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.17.2/cert-manager.yaml
-```
 
-Create the configmap with cached node features. This will allow us to select instances that don't exist yet.
-
-```bash
+# Create the configmap with cached node features. This will allow us to select instances that don't exist yet.
 kubectl create configmap node-features --from-file=./cached-features/node-features.json
-```
 
-Install the flux operator and node feature discovery.
-
-```bash
+# Install the flux operator and node feature discovery.
 kubectl apply -f https://raw.githubusercontent.com/flux-framework/flux-operator/refs/heads/main/examples/dist/flux-operator.yaml
 kubectl apply -k https://github.com/kubernetes-sigs/node-feature-discovery/deployment/overlays/default?ref=v0.17.3
-```
 
-And install the deployment manifest (assuming you are sitting in the cloned repository)
-
-```bash
+# And install the deployment manifest (assuming you are sitting in the cloned repository)
 kubectl apply -f ./webhook-mlserver-with-cache.yaml
 ```
 
@@ -57,7 +56,9 @@ NAME                                     READY   STATUS    RESTARTS   AGE
 ocifit-k8s-deployment-86c7fcbbfb-nfs52   2/2     Running   0          39s
 ```
 
-## Experiment to Test Random Runs
+## 4. Experiments
+
+### Experiment to Test Random Runs
 
 This will be orchestrated by helm. 
 
@@ -95,7 +96,7 @@ for i in $(seq 1 30); do
 done
 ```
 
-## Experiment to FOM Selection
+### Experiment to FOM Selection
 
 ```bash
 mkdir -p ./logs/hpcg/fom-model
@@ -129,7 +130,7 @@ for i in $(seq 1 30); do
 done
 ```
 
-## Experiment to FOM Per Dollar Selection
+### Experiment to FOM Per Dollar Selection
 
 ```bash
 mkdir -p ./logs/hpcg/fom-per-dollar
