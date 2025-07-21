@@ -1,0 +1,154 @@
+# Use a self-signed issuer is perfect for in-cluster webhooks.
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: selfsigned-issuer
+  namespace: default
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ocifit-k8s-cert
+  namespace: default
+spec:
+  # Name of the secret that will be created.
+  # Must match the secretName in the Deployment's volume.
+  secretName: ocifit-k8s-tls
+  
+  # The DNS name MUST match the Kubernetes Service's FQDN.
+  # Format: <service-name>.<namespace>.svc
+  dnsNames:
+  - ocifit-k8s-svc.default.svc
+
+  issuerRef:
+    name: selfsigned-issuer
+    kind: Issuer
+---
+# The ServiceAccount the Deployment will use
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ocifit-k8s-sa
+  namespace: default
+---
+# The ClusterRole granting permissions to read Node objects
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: node-reader
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "list", "watch"]
+---
+# Binds the role to our ServiceAccount
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ocifit-k8s-node-reader-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: node-reader
+subjects:
+- kind: ServiceAccount
+  name: ocifit-k8s-sa
+  namespace: default
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ocifit-k8s-deployment
+  labels:
+    app: ocifit-k8s
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ocifit-k8s
+  template:
+    metadata:
+      labels:
+        app: ocifit-k8s
+    spec:
+      serviceAccountName: ocifit-k8s-sa
+      nodeSelector:
+        node.kubernetes.io/instance-type: t3.2xlarge
+      containers:
+      - name: ml-server
+        image: ghcr.io/converged-computing/aws-performance-study:model-server
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+          name: mlserver-api        
+      - name: ocifit-webhook
+        image: ghcr.io/compspec/ocifit-k8s:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8443
+          name: webhook-tls
+        env:
+        - name: MODEL_SERVER_URL
+          value: "http://localhost:5000"
+        - name: TLS_CERT_PATH
+          value: /etc/webhook/certs/tls.crt
+        - name: TLS_KEY_PATH
+          value: /etc/webhook/certs/tls.key
+        - name: FEATURES_CACHE_DIR
+          value: /etc/features-cache
+        volumeMounts:
+        - name: webhook-certs
+          mountPath: /etc/webhook/certs
+          readOnly: true
+        - name: static-features-cache
+          mountPath: /etc/features-cache
+          readOnly: true
+      volumes:
+      - name: webhook-certs
+        secret:
+          secretName: ocifit-k8s-tls # Matches the Certificate's secretName
+      - name: static-features-cache
+        configMap:
+          name: node-features
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ocifit-k8s-svc
+spec:
+  selector:
+    app: ocifit-k8s
+  ports:
+    - port: 443
+      targetPort: webhook-tls
+---
+# 3. The MutatingWebhookConfiguration with auto-injection
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: oci-image-selector-webhook
+  annotations:
+    # cert-manager will see this and inject the CA from the 'ocifit-k8s-cert' Certificate
+    cert-manager.io/inject-ca-from: default/ocifit-k8s-cert
+webhooks:
+- name: oci.image.compatibilities.selection
+  clientConfig:
+    # cert-manager will fill caBundle.
+    service:
+      name: ocifit-k8s-svc
+      namespace: default
+      path: "/mutate"
+      port: 443
+  rules:
+  - operations: [ "CREATE" ]
+    apiGroups: [""]
+    apiVersions: ["v1"]
+    resources: ["pods"]
+  - operations: [ "CREATE" ]
+    apiGroups: ["flux-framework.org"]
+    apiVersions: ["v1alpha2"]
+    resources: ["miniclusters"]
+  sideEffects: None
+  admissionReviewVersions: ["v1"]

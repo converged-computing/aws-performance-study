@@ -1,0 +1,388 @@
+{
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "metadata": {
+        "annotations": {
+            "batch.kubernetes.io/job-completion-index": "0"
+        },
+        "creationTimestamp": "2025-07-21T01:51:49Z",
+        "finalizers": [
+            "batch.kubernetes.io/job-tracking"
+        ],
+        "generateName": "hpcg-0-",
+        "labels": {
+            "app": "flux-operator",
+            "app.kubernetes.io/name": "hpcg",
+            "batch.kubernetes.io/controller-uid": "b6f0b967-db2a-4e4c-836d-2daa9b429685",
+            "batch.kubernetes.io/job-completion-index": "0",
+            "batch.kubernetes.io/job-name": "hpcg",
+            "controller-uid": "b6f0b967-db2a-4e4c-836d-2daa9b429685",
+            "hpa-selector": "hpcg",
+            "job-index": "0",
+            "job-name": "hpcg",
+            "namespace": "default"
+        },
+        "name": "hpcg-0-6b9xf",
+        "namespace": "default",
+        "ownerReferences": [
+            {
+                "apiVersion": "batch/v1",
+                "blockOwnerDeletion": true,
+                "controller": true,
+                "kind": "Job",
+                "name": "hpcg",
+                "uid": "b6f0b967-db2a-4e4c-836d-2daa9b429685"
+            }
+        ],
+        "resourceVersion": "34894",
+        "uid": "3899357f-8011-4bb7-bc1e-1d0f7da4a8d4"
+    },
+    "spec": {
+        "affinity": {
+            "podAffinity": {
+                "preferredDuringSchedulingIgnoredDuringExecution": [
+                    {
+                        "podAffinityTerm": {
+                            "labelSelector": {
+                                "matchExpressions": [
+                                    {
+                                        "key": "app.kubernetes.io/name",
+                                        "operator": "In",
+                                        "values": [
+                                            "hpcg"
+                                        ]
+                                    }
+                                ]
+                            },
+                            "topologyKey": "topology.kubernetes.io/zone"
+                        },
+                        "weight": 100
+                    }
+                ]
+            },
+            "podAntiAffinity": {
+                "preferredDuringSchedulingIgnoredDuringExecution": [
+                    {
+                        "podAffinityTerm": {
+                            "labelSelector": {
+                                "matchExpressions": [
+                                    {
+                                        "key": "app.kubernetes.io/name",
+                                        "operator": "In",
+                                        "values": [
+                                            "hpcg"
+                                        ]
+                                    }
+                                ]
+                            },
+                            "topologyKey": "kubernetes.io/hostname"
+                        },
+                        "weight": 100
+                    }
+                ]
+            }
+        },
+        "automountServiceAccountToken": false,
+        "containers": [
+            {
+                "command": [
+                    "/bin/bash",
+                    "/flux_operator/wait-0.sh"
+                ],
+                "env": [
+                    {
+                        "name": "app",
+                        "value": "hpcg"
+                    },
+                    {
+                        "name": "apprun",
+                        "value": "/opt/hpcg/xhpcg"
+                    },
+                    {
+                        "name": "JOB_COMPLETION_INDEX",
+                        "valueFrom": {
+                            "fieldRef": {
+                                "apiVersion": "v1",
+                                "fieldPath": "metadata.labels['batch.kubernetes.io/job-completion-index']"
+                            }
+                        }
+                    }
+                ],
+                "image": "ghcr.io/converged-computing/hpcg-matrix:znver3-Ofast",
+                "imagePullPolicy": "IfNotPresent",
+                "lifecycle": {},
+                "name": "hpcg",
+                "resources": {
+                    "limits": {
+                        "nvidia.com/gpu": "0",
+                        "vpc.amazonaws.com/efa": "0"
+                    },
+                    "requests": {
+                        "nvidia.com/gpu": "0",
+                        "vpc.amazonaws.com/efa": "0"
+                    }
+                },
+                "securityContext": {
+                    "capabilities": {},
+                    "privileged": false
+                },
+                "stdin": true,
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "tty": true,
+                "volumeMounts": [
+                    {
+                        "mountPath": "/mnt/flux",
+                        "name": "flux-view"
+                    },
+                    {
+                        "mountPath": "/flux_operator/",
+                        "name": "hpcg-entrypoint",
+                        "readOnly": true
+                    },
+                    {
+                        "mountPath": "/dev/shm",
+                        "name": "shared-memory"
+                    }
+                ]
+            }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "enableServiceLinks": true,
+        "hostname": "hpcg-0",
+        "initContainers": [
+            {
+                "command": [
+                    "/bin/bash",
+                    "/flux_operator/flux-init.sh"
+                ],
+                "env": [
+                    {
+                        "name": "JOB_COMPLETION_INDEX",
+                        "valueFrom": {
+                            "fieldRef": {
+                                "apiVersion": "v1",
+                                "fieldPath": "metadata.labels['batch.kubernetes.io/job-completion-index']"
+                            }
+                        }
+                    }
+                ],
+                "image": "ghcr.io/converged-computing/flux-view-rocky:tag-9",
+                "imagePullPolicy": "IfNotPresent",
+                "name": "flux-view",
+                "resources": {},
+                "stdin": true,
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "tty": true,
+                "volumeMounts": [
+                    {
+                        "mountPath": "/mnt/flux",
+                        "name": "flux-view"
+                    },
+                    {
+                        "mountPath": "/flux_operator/",
+                        "name": "hpcg-entrypoint",
+                        "readOnly": true
+                    }
+                ]
+            }
+        ],
+        "nodeName": "ip-192-168-62-84.ec2.internal",
+        "nodeSelector": {
+            "node.kubernetes.io/instance-type": "m6id.12xlarge"
+        },
+        "preemptionPolicy": "PreemptLowerPriority",
+        "priority": 0,
+        "restartPolicy": "OnFailure",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "serviceAccount": "default",
+        "serviceAccountName": "default",
+        "setHostnameAsFQDN": false,
+        "shareProcessNamespace": false,
+        "subdomain": "flux-service",
+        "terminationGracePeriodSeconds": 30,
+        "tolerations": [
+            {
+                "effect": "NoExecute",
+                "key": "node.kubernetes.io/not-ready",
+                "operator": "Exists",
+                "tolerationSeconds": 300
+            },
+            {
+                "effect": "NoExecute",
+                "key": "node.kubernetes.io/unreachable",
+                "operator": "Exists",
+                "tolerationSeconds": 300
+            },
+            {
+                "effect": "NoSchedule",
+                "key": "nvidia.com/gpu",
+                "operator": "Exists"
+            },
+            {
+                "effect": "NoSchedule",
+                "key": "vpc.amazonaws.com/efa",
+                "operator": "Exists"
+            }
+        ],
+        "volumes": [
+            {
+                "emptyDir": {},
+                "name": "flux-view"
+            },
+            {
+                "configMap": {
+                    "defaultMode": 420,
+                    "items": [
+                        {
+                            "key": "wait-0",
+                            "mode": 511,
+                            "path": "wait-0.sh"
+                        },
+                        {
+                            "key": "flux-view",
+                            "mode": 511,
+                            "path": "flux-init.sh"
+                        },
+                        {
+                            "key": "curve.cert",
+                            "path": "curve.cert"
+                        }
+                    ],
+                    "name": "hpcg-entrypoint"
+                },
+                "name": "hpcg-entrypoint"
+            },
+            {
+                "emptyDir": {
+                    "medium": "Memory"
+                },
+                "name": "shared-memory"
+            }
+        ]
+    },
+    "status": {
+        "conditions": [
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2025-07-21T01:53:23Z",
+                "status": "True",
+                "type": "PodReadyToStartContainers"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2025-07-21T01:53:50Z",
+                "reason": "PodCompleted",
+                "status": "True",
+                "type": "Initialized"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2025-07-21T01:54:48Z",
+                "reason": "PodCompleted",
+                "status": "False",
+                "type": "Ready"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2025-07-21T01:54:48Z",
+                "reason": "PodCompleted",
+                "status": "False",
+                "type": "ContainersReady"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2025-07-21T01:53:12Z",
+                "status": "True",
+                "type": "PodScheduled"
+            }
+        ],
+        "containerStatuses": [
+            {
+                "containerID": "containerd://7f11e5ed2bed56d6120f1e74aebaae819b93dd85081e2899f192560abc4894b1",
+                "image": "ghcr.io/converged-computing/hpcg-matrix:znver3-Ofast",
+                "imageID": "ghcr.io/converged-computing/hpcg-matrix@sha256:2cb2ff891a0add281f688ebf57691af745a0b3a2c6a50662361e145bab6ebb62",
+                "lastState": {},
+                "name": "hpcg",
+                "ready": false,
+                "restartCount": 0,
+                "started": false,
+                "state": {
+                    "terminated": {
+                        "containerID": "containerd://7f11e5ed2bed56d6120f1e74aebaae819b93dd85081e2899f192560abc4894b1",
+                        "exitCode": 0,
+                        "finishedAt": "2025-07-21T01:54:48Z",
+                        "reason": "Completed",
+                        "startedAt": "2025-07-21T01:53:51Z"
+                    }
+                },
+                "volumeMounts": [
+                    {
+                        "mountPath": "/mnt/flux",
+                        "name": "flux-view"
+                    },
+                    {
+                        "mountPath": "/flux_operator/",
+                        "name": "hpcg-entrypoint",
+                        "readOnly": true,
+                        "recursiveReadOnly": "Disabled"
+                    },
+                    {
+                        "mountPath": "/dev/shm",
+                        "name": "shared-memory"
+                    }
+                ]
+            }
+        ],
+        "hostIP": "192.168.62.84",
+        "hostIPs": [
+            {
+                "ip": "192.168.62.84"
+            }
+        ],
+        "initContainerStatuses": [
+            {
+                "containerID": "containerd://d0610d2ce005741e4331b818ec2efc9ce355f69a3b4de194383517c083aff05e",
+                "image": "ghcr.io/converged-computing/flux-view-rocky:tag-9",
+                "imageID": "ghcr.io/converged-computing/flux-view-rocky@sha256:edca488bf0d08fbbd68af1c6520d3da7f1f0de76793e884ce97565d9216fc304",
+                "lastState": {},
+                "name": "flux-view",
+                "ready": true,
+                "restartCount": 0,
+                "started": false,
+                "state": {
+                    "terminated": {
+                        "containerID": "containerd://d0610d2ce005741e4331b818ec2efc9ce355f69a3b4de194383517c083aff05e",
+                        "exitCode": 0,
+                        "finishedAt": "2025-07-21T01:53:34Z",
+                        "reason": "Completed",
+                        "startedAt": "2025-07-21T01:53:22Z"
+                    }
+                },
+                "volumeMounts": [
+                    {
+                        "mountPath": "/mnt/flux",
+                        "name": "flux-view"
+                    },
+                    {
+                        "mountPath": "/flux_operator/",
+                        "name": "hpcg-entrypoint",
+                        "readOnly": true,
+                        "recursiveReadOnly": "Disabled"
+                    }
+                ]
+            }
+        ],
+        "phase": "Running",
+        "podIP": "192.168.42.122",
+        "podIPs": [
+            {
+                "ip": "192.168.42.122"
+            }
+        ],
+        "qosClass": "BestEffort",
+        "startTime": "2025-07-21T01:53:12Z"
+    }
+}

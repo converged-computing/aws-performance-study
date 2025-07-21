@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import re
 import numpy
 import argparse
 import sys
@@ -7,6 +8,7 @@ import json
 import os
 import pandas
 import shap
+import copy
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -155,7 +157,20 @@ def load_node_features():
     feature_file = os.path.abspath(
         os.path.join(here, "../../docs/node-explorer/node-features.json")
     )
+    valid_clusters = os.listdir("../../experiment/on-premises/results/logs")
     features = ps.read_json(feature_file)
+    feature_dir = "../../experiment/on-premises/results/features"
+    for feature_file in os.listdir(feature_dir):
+        if not feature_file.startswith("labels"):
+            continue
+        on_prem_features = ps.read_json(os.path.join(feature_dir, feature_file))
+        cluster = feature_file.replace("labels-", "").replace(".json", "")
+        if cluster not in valid_clusters:
+            continue
+        on_prem_features["node.kubernetes.io/instance-type"] = cluster
+        features.append(on_prem_features)
+
+    # We also need to add the on-premises
     unique_features = set()
     feature_values = {}
 
@@ -171,8 +186,10 @@ def load_node_features():
 
     # Now we want to get rid of features that add no value
     feature_keepers = {}
+
+    skip_features = "(%s)" % "|".join(["os_release.VERSION_ID.minor"])
     for feature, feature_options in feature_values.items():
-        if len(feature_options) <= 1:
+        if len(feature_options) <= 1 or re.search(skip_features, feature):
             continue
         feature_keepers[feature] = sorted(list(feature_options))
 
@@ -184,6 +201,7 @@ def load_node_features():
             columns.append(f"{feature}_{feature_value}")
 
     # Make feature family into a lookup
+    # TODO keep trying to run on dane / ruby / and get labels for corona190
     features = {
         x["node.kubernetes.io/instance-type"].split(".")[0]: x for x in features
     }
@@ -260,8 +278,8 @@ def parse_data(indir, outdir):
                 continue
             family = row.env.split(".")[0]
 
-            # Use a lookup as we go
-            if row.filename not in futex_lookup:
+            # Use a lookup as we go. We don't have on-premises ebpf
+            if row.filename not in futex_lookup and "on-premises" not in row.filename:
 
                 # Assume we haven't seen futex or cpu
                 futex_lookup[row.filename] = {}
@@ -297,6 +315,7 @@ def parse_data(indir, outdir):
     top_features_json = {}
     interface_data = []
     seen = set()
+
     # Now generate models!
     for filename in y_files:
         # Here is our feature df
@@ -310,15 +329,15 @@ def parse_data(indir, outdir):
             if "dollar" in filename:
                 row.metric = "fom_per_dollar"
 
-            # This is the Y to predict
-            y_actual.append(float(row.value))
-
             family = row.env.split(".")[0]
             if family not in features:
                 if family not in seen:
                     print(f"{family} missing from features - Vanessa add it!")
                     seen.add(family)
                 continue
+
+            # This is the Y to predict
+            y_actual.append(float(row.value))
 
             # Once we get here, we have the values
             # Assemble the features for the node, we only need to know
@@ -331,9 +350,13 @@ def parse_data(indir, outdir):
             # Last set are:
             # opt, cores, threads, micro_arch, futex_waiting_ns, cpu_running_ns, cpu_waiting_ns, y_pred
             opt, micro_arch = row.problem_size.rsplit("-", 1)
-            futex_time = futex_lookup[row.filename].get("median_futex_wait")
-            cpu_running = cpu_lookup[row.filename].get("cpu_running_ns")
-            cpu_waiting = cpu_lookup[row.filename].get("cpu_waiting_ns")
+            cpu_running = None
+            cpu_waiting = None
+            futex_time = None
+            if "on-premises" not in row.filename:
+                cpu_running = cpu_lookup[row.filename].get("cpu_running_ns")
+                cpu_waiting = cpu_lookup[row.filename].get("cpu_waiting_ns")
+                futex_time = futex_lookup[row.filename].get("median_futex_wait")
             feature_vector += [
                 opt,
                 thread_lookup[family],
@@ -342,7 +365,12 @@ def parse_data(indir, outdir):
                 cpu_running,
                 cpu_waiting,
             ]
-            uid = f"{row.env}.{row.problem_size}.{row.iteration}"
+            iteration = row.iteration
+            uid = f"{row.env}.{row.problem_size}.{iteration}"
+            # on-premises runs have repeat iteration numbers for different ones
+            while uid in df.index:
+                iteration += 1
+                uid = f"{row.env}.{row.problem_size}.{iteration}"
             df.loc[uid, columns] = feature_vector
 
         # When we get here, we need to hot one encode
@@ -363,7 +391,10 @@ def parse_data(indir, outdir):
 
         # Create a pipeline with preprocessing and a model - linear regression. I'm simple
         pipeline = Pipeline(
-            steps=[("preprocessor", preprocessor), ("regressor", LinearRegression())]
+            steps=[
+                ("preprocessor", preprocessor),
+                ("regressor", LinearRegression()),
+            ]
         )
 
         # TODO: consider not including eBPF if not meaningful because we have to drop
@@ -406,6 +437,9 @@ def parse_data(indir, outdir):
         )
         plt.clf()
         plt.close()
+
+        # Save linear model pipeline for shapley
+        lm_pipeline = copy.deepcopy(pipeline)
 
         # Random forest
         pipeline = Pipeline(
@@ -455,9 +489,9 @@ def parse_data(indir, outdir):
         df["y_actual"] = y_actual
         df.to_csv(os.path.join(models_dir, f"features_{filename}"))
 
-        # Which features are meaningful?
-        preprocessor = pipeline.named_steps["preprocessor"]
-        regressor = pipeline.named_steps["regressor"]
+        # Use the linear model - trees are more likely to overfit I think
+        preprocessor = lm_pipeline.named_steps["preprocessor"]
+        regressor = lm_pipeline.named_steps["regressor"]
         X_train_transformed_background = preprocessor.transform(X_train)
         X_test_transformed = preprocessor.transform(X_test)
 
@@ -466,9 +500,11 @@ def parse_data(indir, outdir):
         X_train_transformed_background = X_train_transformed_background.astype(
             numpy.float32
         )
+
         feature_names_out = preprocessor.get_feature_names_out()
 
-        explainer = shap.TreeExplainer(regressor, data=X_train_transformed_background)
+        # Which features are meaningful?
+        explainer = shap.LinearExplainer(regressor, X_train_transformed_background)
         X_test_transformed = X_test_transformed.toarray()
         X_test_transformed = X_test_transformed.astype(numpy.float32)
         X_test_transformed_df = pandas.DataFrame(
@@ -481,7 +517,7 @@ def parse_data(indir, outdir):
         # Get relative contribution of top features
         shap_sum = numpy.abs(shap_values).mean(axis=0)
         indices = numpy.argsort(shap_sum)[::-1]
-        top_n_features = [feature_names_out[i] for i in indices[:5]]
+        top_n_features = [feature_names_out[i] for i in indices[:3]]
 
         plt.figure(figsize=(12, 10))
         shap.summary_plot(
@@ -506,6 +542,17 @@ def parse_data(indir, outdir):
         plt.subplots_adjust(left=0.35, bottom=0.15)
         plt.savefig(
             os.path.join(models_dir, f"shap_summary_{row.metric}_dot.svg"),
+            bbox_inches="tight",
+        )
+        plt.clf()
+        plt.close()
+
+        shap_interaction_values = tree_explainer.shap_interaction_values(X_test)
+        plt.figure(figsize=(12, 10))
+        shap.summary_plot(shap_interaction_values, X_test_transformed_df)
+        plt.subplots_adjust(left=0.35, bottom=0.15)
+        plt.savefig(
+            os.path.join(models_dir, f"shap_summary_{row.metric}_interactions.svg"),
             bbox_inches="tight",
         )
         plt.clf()

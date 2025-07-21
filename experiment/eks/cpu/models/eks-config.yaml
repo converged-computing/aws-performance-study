@@ -1,0 +1,470 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: nfd-cluster
+  region: us-east-1
+
+iam:
+  withOIDC: true
+  serviceAccounts:
+  - metadata:
+      name: cluster-autoscaler
+      namespace: kube-system
+    attachPolicy:
+      Version: "2012-10-17"
+      Statement:
+      - Effect: Allow
+        Action:
+        - "autoscaling:DescribeAutoScalingGroups"
+        - "autoscaling:DescribeAutoScalingInstances"
+        - "autoscaling:DescribeLaunchConfigurations"
+        - "ec2:DescribeImages"
+        - "ec2:DescribeInstanceTypes"
+        - "ec2:DescribeLaunchTemplateVersions"
+        - "ec2:GetInstanceTypesFromInstanceRequirements"
+        - "autoscaling:DescribeTags"
+        - "autoscaling:SetDesiredCapacity"
+        - "autoscaling:TerminateInstanceInAutoScalingGroup"
+        - "eks:DescribeNodegroup"        
+        Resource: '*'
+
+availabilityZones: ["us-east-1a", "us-east-1b", "us-east-1c"]
+managedNodeGroups:
+  - name: ng-c7a-large
+    availabilityZones: ["us-east-1b"]
+    instanceType: c7a.12xlarge
+    volumeSize: 20
+    volumeType: gp2
+    desiredCapacity: 0
+    minSize: 0
+    maxSize: 1
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      nodegroup: ng-c7a-large
+      kubernetes.io/cluster/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup: ng-c7a-large
+      Name: 'nfd-cluster'
+    propagateASGTags: true
+
+  - name: ng-hpc7g-16xlarge
+    availabilityZones: ["us-east-1a"]
+    instanceType: hpc7g.16xlarge
+    volumeSize: 20
+    volumeType: gp2
+    desiredCapacity: 0
+    minSize: 0
+    maxSize: 1
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      nodegroup: ng-hpc7g-16xlarge
+      kubernetes.io/cluster/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup: ng-hpc7g-16xlarge
+      Name: 'nfd-cluster'
+    propagateASGTags: true
+
+  - name: ng-c6in-4xlarge
+    availabilityZones: ["us-east-1b"]
+    instanceType: c6in.12xlarge
+    volumeSize: 20
+    volumeType: gp2
+    desiredCapacity: 0
+    minSize: 0
+    maxSize: 1
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      nodegroup: ng-c6in-4xlarge
+      kubernetes.io/cluster/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup: ng-c6in-4xlarge
+      Name: 'nfd-cluster'
+    propagateASGTags: true
+
+  - name: ng-r7iz-large
+    availabilityZones: ["us-east-1b"]
+    instanceType: r7iz.8xlarge
+    volumeSize: 20
+    volumeType: gp2
+    desiredCapacity: 0
+    minSize: 0
+    maxSize: 1
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      nodegroup: ng-r7iz-large
+      kubernetes.io/cluster/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup: ng-r7iz-large
+      Name: 'nfd-cluster'
+    propagateASGTags: true
+
+  - name: ng-m6g-large
+    availabilityZones: ["us-east-1b"]
+    instanceType: m6g.12xlarge
+    volumeSize: 20
+    volumeType: gp2
+    desiredCapacity: 0
+    minSize: 0
+    maxSize: 1
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      nodegroup: ng-m6g-large
+      kubernetes.io/cluster/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup: ng-m6g-large
+      Name: 'nfd-cluster'
+    propagateASGTags: true
+      
+  - name: ng-t3a-medium
+    instanceType: t3a.2xlarge
+    volumeSize: 20
+    volumeType: gp2
+    desiredCapacity: 0
+    minSize: 0
+    maxSize: 1
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      nodegroup: ng-t3a-medium
+      kubernetes.io/cluster/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup: ng-t3a-medium
+      Name: 'nfd-cluster'
+    propagateASGTags: true
+
+  # This will be a node to install to - "sticky node"
+  - name: ng-t3-medium
+    instanceType: t3.2xlarge
+    volumeSize: 20
+    volumeType: gp2
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      nodegroup: ng-t3-medium
+      kubernetes.io/cluster/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup: ng-t3-medium
+      Name: 'nfd-cluster'
+    propagateASGTags: true
+
+  # Intel General Purpose with Local NVMe
+  - name: ng-m6id-large
+    instanceType: m6id.12xlarge
+    volumeSize: 20
+    volumeType: gp2
+    desiredCapacity: 0
+    minSize: 0
+    maxSize: 1
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      nodegroup: ng-m6id-large
+      kubernetes.io/cluster/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup: ng-m6id-large
+      Name: 'nfd-cluster'
+    propagateASGTags: true
+
+  # Intel Compute Optimized with Local NVMe
+  - name: ng-c6id-large
+    instanceType: c6id.12xlarge
+    volumeSize: 20
+    volumeType: gp2
+    desiredCapacity: 0
+    minSize: 0
+    maxSize: 1
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      nodegroup: ng-c6id-large
+      kubernetes.io/cluster/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup: ng-c6id-large
+      Name: 'nfd-cluster'
+    propagateASGTags: true
+
+  # AWS Inferentia2 - ML Inference
+  # ARM-based, purpose-built for deep learning inference. Adds a specialized ML instance.
+  # Requires specific Neuron SDK and compiled models.
+  - name: ng-inf2-xlarge
+    instanceType: inf2.xlarge
+    volumeSize: 20
+    volumeType: gp2
+    desiredCapacity: 0
+    minSize: 0
+    maxSize: 1
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      nodegroup: ng-inf2-xlarge
+      kubernetes.io/cluster/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup: ng-inf2-xlarge
+      Name: 'nfd-cluster'
+    propagateASGTags: true
+
+  # ARM
+  - name: ng-t4g-medium
+    instanceType: t4g.2xlarge
+    volumeSize: 20
+    volumeType: gp2
+    desiredCapacity: 0
+    minSize: 0
+    maxSize: 1
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      nodegroup: ng-t4g-medium
+      kubernetes.io/cluster/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup: ng-t4g-medium
+      Name: 'nfd-cluster'
+    propagateASGTags: true
+
+  # --- General Purpose - Standard ---
+  - name: ng-m6i-large
+    instanceType: m6i.12xlarge
+    volumeSize: 30
+    volumeType: gp2
+    desiredCapacity: 0
+    minSize: 0
+    maxSize: 1
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      nodegroup: ng-m6i-large
+      kubernetes.io/cluster/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup: ng-m6i-large
+      Name: 'nfd-cluster'
+    propagateASGTags: true
+
+  - name: ng-m6a-large
+    instanceType: m6a.12xlarge
+    volumeSize: 30
+    volumeType: gp2
+    desiredCapacity: 0
+    minSize: 0
+    maxSize: 1
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      nodegroup: ng-m6a-large
+      kubernetes.io/cluster/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup: ng-m6a-large
+      Name: 'nfd-cluster'
+    propagateASGTags: true
+
+   # ARM instance
+  - name: ng-m7g-large
+    instanceType: m7g.16xlarge
+    volumeSize: 30
+    volumeType: gp2
+    desiredCapacity: 0
+    minSize: 0
+    maxSize: 1
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      nodegroup: ng-m7g-large
+      kubernetes.io/cluster/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup: ng-m7g-large
+      Name: 'nfd-cluster'
+    propagateASGTags: true
+
+    # --- Compute Optimized ---
+  - name: ng-c6i-large
+    instanceType: c6i.16xlarge
+    volumeSize: 30
+    volumeType: gp2
+    desiredCapacity: 0
+    minSize: 0
+    maxSize: 1
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      nodegroup: ng-c6i-large
+      kubernetes.io/cluster/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup: ng-c6i-large
+      Name: 'nfd-cluster'
+    propagateASGTags: true
+
+  - name: ng-c6a-large
+    instanceType: c6a.16xlarge
+    volumeSize: 30
+    volumeType: gp2
+    desiredCapacity: 0
+    minSize: 0
+    maxSize: 1
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      nodegroup: ng-c6a-large
+      kubernetes.io/cluster/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup: ng-c6a-large
+      Name: 'nfd-cluster'
+    propagateASGTags: true
+
+   # ARM instance
+  - name: ng-c7g-large
+    instanceType: c7g.16xlarge
+    volumeSize: 30
+    volumeType: gp2
+    desiredCapacity: 0
+    minSize: 0
+    maxSize: 1
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      nodegroup: ng-c7g-large
+      kubernetes.io/cluster/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup: ng-c7g-large
+      Name: 'nfd-cluster'
+    propagateASGTags: true
+
+  # --- Memory Optimized ---
+  - name: ng-r6i-large
+    instanceType: r6i.8xlarge
+    amiFamily: AmazonLinux2
+    volumeSize: 30
+    volumeType: gp2
+    desiredCapacity: 0
+    minSize: 0
+    maxSize: 1
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      nodegroup: ng-r6i-large
+      kubernetes.io/cluster/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup: ng-r6i-large
+      Name: 'nfd-cluster'
+    propagateASGTags: true
+
+  - name: ng-r6a-large
+    instanceType: r6a.12xlarge
+    volumeSize: 30
+    volumeType: gp2
+    desiredCapacity: 0
+    minSize: 0
+    maxSize: 1
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      nodegroup: ng-r6a-large
+      kubernetes.io/cluster/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup: ng-r6a-large
+      Name: 'nfd-cluster'
+    propagateASGTags: true
+
+  - name: ng-r7g-large
+    instanceType: r7g.12xlarge
+    volumeSize: 30
+    volumeType: gp2
+    desiredCapacity: 0
+    minSize: 0
+    maxSize: 1
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      nodegroup: ng-r7g-large
+      kubernetes.io/cluster/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup: ng-r7g-large
+      Name: 'nfd-cluster'
+    propagateASGTags: true
+
+  # --- Storage Optimized ---
+  - name: ng-i4i-large
+    instanceType: i4i.8xlarge
+    volumeSize: 30 # Root volume, actual NVMe is instance store
+    volumeType: gp2
+    desiredCapacity: 0
+    minSize: 0
+    maxSize: 1
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      nodegroup: ng-i4i-large
+      kubernetes.io/cluster/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup: ng-i4i-large
+      Name: 'nfd-cluster'
+    propagateASGTags: true
+
+  # --- Dense Storage (HDD) ---
+  - name: ng-d3-xlarge
+    instanceType: d3.4xlarge
+    volumeSize: 30
+    volumeType: gp2
+    desiredCapacity: 0
+    minSize: 0
+    maxSize: 1
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+    tags:
+      nodegroup: ng-d3-xlarge
+      kubernetes.io/cluster/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/nfd-cluster: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup: ng-d3-xlarge
+      Name: 'nfd-cluster'
+    propagateASGTags: true

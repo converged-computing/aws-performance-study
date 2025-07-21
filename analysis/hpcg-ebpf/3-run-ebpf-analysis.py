@@ -263,7 +263,7 @@ def plot_shmem(db, outdir):
                 ax.get_legend().remove()
         axes[1].axis("off")
         plt.tight_layout()
-        #plt.savefig(os.path.join(img_outdir, f"lammps-shmem-{metric}.png"))
+        # plt.savefig(os.path.join(img_outdir, f"lammps-shmem-{metric}.png"))
         plt.savefig(os.path.join(img_outdir, f"lammps-shmem-{metric}.svg"))
         plt.clf()
 
@@ -301,7 +301,7 @@ def plot_futex(db, outdir):
             x="experiment",
             y="microseconds",
             hue="optimization",
-            palette=ps.colors,            
+            palette=ps.colors,
             err_kws={"color": "darkred"},
             order=order,
         )
@@ -322,7 +322,7 @@ def plot_futex(db, outdir):
         axes[1].axis("off")
         axes[0].get_legend().remove()
         plt.tight_layout()
-        #plt.savefig(os.path.join(img_outdir, f"xhpcg-median-futex-wait-{instance}.png"))
+        # plt.savefig(os.path.join(img_outdir, f"xhpcg-median-futex-wait-{instance}.png"))
         plt.savefig(os.path.join(img_outdir, f"xhpcg-median-futex-wait-{instance}.svg"))
         plt.clf()
 
@@ -394,7 +394,7 @@ def plot_cpu(db, outdir):
         axes[0].get_legend().remove()
         axes[1].axis("off")
         plt.tight_layout()
-        #plt.savefig(
+        # plt.savefig(
         #    os.path.join(img_outdir, f"xhpcg-running-waiting-cpu-ratio-{instance}.png")
         #
         plt.savefig(
@@ -538,7 +538,7 @@ def plot_open_close(db, outdir):
         ax.set_xticklabels(sizes)
         plt.tight_layout()
         plt.savefig(os.path.join(img_outdir, f"{command}-jaccard.svg"))
-        #plt.savefig(os.path.join(img_outdir, f"{command}-jaccard.png"))
+        # plt.savefig(os.path.join(img_outdir, f"{command}-jaccard.png"))
         plt.clf()
 
     ps.write_json(
