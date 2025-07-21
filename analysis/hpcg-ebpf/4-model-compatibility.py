@@ -547,16 +547,16 @@ def parse_data(indir, outdir):
         plt.clf()
         plt.close()
 
-        shap_interaction_values = tree_explainer.shap_interaction_values(X_test)
-        plt.figure(figsize=(12, 10))
-        shap.summary_plot(shap_interaction_values, X_test_transformed_df)
-        plt.subplots_adjust(left=0.35, bottom=0.15)
-        plt.savefig(
-            os.path.join(models_dir, f"shap_summary_{row.metric}_interactions.svg"),
-            bbox_inches="tight",
-        )
-        plt.clf()
-        plt.close()
+        #shap_interaction_values = tree_explainer.shap_interaction_values(X_test)
+        #plt.figure(figsize=(12, 10))
+        ##shap.summary_plot(shap_interaction_values, X_test_transformed_df)
+        #plt.subplots_adjust(left=0.35, bottom=0.15)
+        #plt.savefig(
+        #    os.path.join(models_dir, f"shap_summary_{row.metric}_interactions.svg"),
+        #    bbox_inches="tight",
+        #)
+        #plt.clf()
+        #plt.close()
         interface_data.append(
             {
                 "id": row.metric,

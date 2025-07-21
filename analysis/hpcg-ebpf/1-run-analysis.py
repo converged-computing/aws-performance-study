@@ -66,7 +66,7 @@ def main():
     # Find input files (skip anything with test)
     files = ps.find_inputs(indir, "hpcg.out")
 
-    # Also include on premises results
+    # Also include on premises results (this was for interface)
     on_prem = "../../experiment/on-premises/results/logs/"
     files += [os.path.join(on_prem, x) for x in os.listdir(on_prem)]
 
@@ -182,6 +182,14 @@ def add_hpcg_result(p, indir, filename, ebpf=None, gpu=False, metrics=None):
         values = [float(x.rsplit("=", 1)[-1]) for x in lines if prefix in x]
         others[key] = values
 
+    # If we have fom and duration, calculate cost per unit of fom.
+    if "fom" in metrics:
+        durations = [float(x.rsplit("=", 1)[-1]) for x in lines if "Benchmark Time Summary::Total" in x]
+        # Convert units of seconds to hours to be in same time unit as cost
+        fraction_of_hour = [x/3600 for x in durations]
+        total_costs = [ps.cost_lookup[instance]*cost for i,cost in enumerate(fraction_of_hour)]
+        others['fom_per_dollar'] = [fom_value/total_costs[i] for i,fom_value in enumerate(others['fom'])]
+
     for key, values in others.items():
         # The ordering is consistent between lists
         for iteration, value in enumerate(values):
@@ -197,7 +205,7 @@ def parse_data(indir, outdir, files):
 
     # It's important to just parse raw data once, and then use intermediate
     for filename in files:
-        if "test" in filename:
+        if "test" in filename or "/models" in filename:
             continue
         p = add_hpcg_result(p, indir, filename)
 
@@ -297,8 +305,9 @@ def parse_metrics(indir, outdir, files):
     for metric, prefix in metrics.items():
         p = ps.ProblemSizeParser("hpcg")
         for filename in files:
-            if "test" in filename:
+            if "test" in filename or "/models/" in filename:
                 continue
+            # Save durations for fom per dollar
             p = add_hpcg_result(p, indir, filename, metrics={metric: prefix})
         print(metric + " " + prefix)
         # We save this for later and can plot it.
@@ -308,9 +317,7 @@ def parse_metrics(indir, outdir, files):
         # Parse the "science per unit cost"
         if metric == "fom":
             cost_df = p.df.copy()
-            cost_df.value = [
-                float(x.value / ps.cost_lookup[x.env]) for _, x in cost_df.iterrows()
-            ]
+            cost_df[cost_df.metric.isin(['compatible', 'fom_per_dollar'])]
             cost_df.to_csv(os.path.join(data_outdir, "csv", f"hpcg_fom_per_dollar.csv"))
         instances = p.df.env.unique().tolist()
         build_config = p.df.problem_size.unique().tolist()
@@ -481,9 +488,11 @@ def plot_results(df, outdir):
 
     # Now we want to calculate the cost per unit of science.
     # Add cost per hour
+    data_outdir = os.path.join(outdir, "heatmap")
+    cost_df = pandas.read_csv(os.path.join(data_outdir, "csv", f"hpcg_fom_per_dollar.csv"), index_col=0)
+    cost_df.index = cost_df.problem_size.tolist()
+    
     fom_cost_df = pandas.DataFrame(0.0, columns=instances, index=list(build_config))
-
-    # This one doesn't account for cost
     fom_df = pandas.DataFrame(0.0, columns=instances, index=list(build_config))
     idx = 0
     for metric, instances in frames.items():
@@ -501,7 +510,8 @@ def plot_results(df, outdir):
     axes.append(fig.add_subplot(gs[0, 0]))
     sns.set_style("whitegrid")
     g1 = sns.clustermap(
-        fom_cost_df,
+        # Science per dollar value of 0 is ok
+        fom_cost_df.fillna(0),
         cmap="crest",
         annot=False,
     )
@@ -517,7 +527,7 @@ def plot_results(df, outdir):
     axes.append(fig.add_subplot(gs[0, 0]))
     sns.set_style("whitegrid")
     g2 = sns.clustermap(
-        fom_df,
+        fom_df.fillna(0),
         cmap="crest",
         annot=False,
     )

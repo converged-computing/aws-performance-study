@@ -477,6 +477,7 @@ cost_lookup = {
     "t4g.2xlarge": 0.2688,
     "r7iz.8xlarge": 2.976,
     "r6i.8xlarge": 2.016,
+    "r7g.12xlarge": 2.5704,
     "poodle4": 1.5,
     "borax26": 2.772,
     "boraxo17": 2.772,
