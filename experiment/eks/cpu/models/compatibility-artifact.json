@@ -2,18 +2,20 @@
     "version": "v1alpha1",
     "compatibilities": [
         {
-            "tag": "random",
-            "description": "Random image selection",
+            "tag": "mpi_allreduce_avg",
+            "description": "Image selection driven by a performance prediction model.",
             "rules": [
                 {
                     "matchModel": {
                         "model": {
+                            "type": "lasso",
                             "platforms": {
                                 "arm64": "ghcr.io/converged-computing/hpcg-matrix:neoverse-v2-O2-arm",
                                 "amd64": "ghcr.io/converged-computing/hpcg-matrix:znver3-Ofast"
                             },
-                            "direction": "random",
-                            "name": "random"
+                            "direction": "minimize",
+                            "name": "mpi_allreduce_avg",
+                            "filename": "lasso_model_mpi_allreduce_avg.joblib"
                         }
                     }
                 }
@@ -40,6 +42,206 @@
             ]
         },
         {
+            "tag": "total_cg_iterations",
+            "description": "Image selection driven by a performance prediction model.",
+            "rules": [
+                {
+                    "matchModel": {
+                        "model": {
+                            "type": "lasso",
+                            "platforms": {
+                                "arm64": "ghcr.io/converged-computing/hpcg-matrix:neoverse-v2-O2-arm",
+                                "amd64": "ghcr.io/converged-computing/hpcg-matrix:znver3-Ofast"
+                            },
+                            "direction": "maximize",
+                            "name": "total_cg_iterations",
+                            "filename": "lasso_model_total_cg_iterations.joblib"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "tag": "memory_used_data_total_gbytes",
+            "description": "Image selection driven by a performance prediction model.",
+            "rules": [
+                {
+                    "matchModel": {
+                        "model": {
+                            "type": "lasso",
+                            "platforms": {
+                                "arm64": "ghcr.io/converged-computing/hpcg-matrix:neoverse-v2-O2-arm",
+                                "amd64": "ghcr.io/converged-computing/hpcg-matrix:znver3-Ofast"
+                            },
+                            "direction": "maximize",
+                            "name": "memory_used_data_total_gbytes",
+                            "filename": "lasso_model_memory_used_data_total_gbytes.joblib"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "tag": "memory_bandwidth_across_kernels_write",
+            "description": "Image selection driven by a performance prediction model.",
+            "rules": [
+                {
+                    "matchModel": {
+                        "model": {
+                            "type": "lasso",
+                            "platforms": {
+                                "arm64": "ghcr.io/converged-computing/hpcg-matrix:neoverse-v2-O2-arm",
+                                "amd64": "ghcr.io/converged-computing/hpcg-matrix:znver3-Ofast"
+                            },
+                            "direction": "maximize",
+                            "name": "memory_bandwidth_across_kernels_write",
+                            "filename": "lasso_model_memory_bandwidth_across_kernels_write.joblib"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "tag": "gflops_per_second_ddot",
+            "description": "Image selection driven by a performance prediction model.",
+            "rules": [
+                {
+                    "matchModel": {
+                        "model": {
+                            "type": "lasso",
+                            "platforms": {
+                                "arm64": "ghcr.io/converged-computing/hpcg-matrix:neoverse-v2-O2-arm",
+                                "amd64": "ghcr.io/converged-computing/hpcg-matrix:znver3-Ofast"
+                            },
+                            "direction": "maximize",
+                            "name": "gflops_per_second_ddot",
+                            "filename": "lasso_model_gflops_per_second_ddot.joblib"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "tag": "gflops_per_second_mg",
+            "description": "Image selection driven by a performance prediction model.",
+            "rules": [
+                {
+                    "matchModel": {
+                        "model": {
+                            "type": "lasso",
+                            "platforms": {
+                                "arm64": "ghcr.io/converged-computing/hpcg-matrix:neoverse-v2-O2-arm",
+                                "amd64": "ghcr.io/converged-computing/hpcg-matrix:znver3-Ofast"
+                            },
+                            "direction": "maximize",
+                            "name": "gflops_per_second_mg",
+                            "filename": "lasso_model_gflops_per_second_mg.joblib"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "tag": "setup_time_seconds",
+            "description": "Image selection driven by a performance prediction model.",
+            "rules": [
+                {
+                    "matchModel": {
+                        "model": {
+                            "type": "lasso",
+                            "platforms": {
+                                "arm64": "ghcr.io/converged-computing/hpcg-matrix:neoverse-v2-O2-arm",
+                                "amd64": "ghcr.io/converged-computing/hpcg-matrix:znver3-Ofast"
+                            },
+                            "direction": "minimize",
+                            "name": "setup_time_seconds",
+                            "filename": "lasso_model_setup_time_seconds.joblib"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "tag": "memory_bandwidth_across_kernels_read",
+            "description": "Image selection driven by a performance prediction model.",
+            "rules": [
+                {
+                    "matchModel": {
+                        "model": {
+                            "type": "lasso",
+                            "platforms": {
+                                "arm64": "ghcr.io/converged-computing/hpcg-matrix:neoverse-v2-O2-arm",
+                                "amd64": "ghcr.io/converged-computing/hpcg-matrix:znver3-Ofast"
+                            },
+                            "direction": "maximize",
+                            "name": "memory_bandwidth_across_kernels_read",
+                            "filename": "lasso_model_memory_bandwidth_across_kernels_read.joblib"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "tag": "memory_bandwidth_across_kernels_total",
+            "description": "Image selection driven by a performance prediction model.",
+            "rules": [
+                {
+                    "matchModel": {
+                        "model": {
+                            "type": "lasso",
+                            "platforms": {
+                                "arm64": "ghcr.io/converged-computing/hpcg-matrix:neoverse-v2-O2-arm",
+                                "amd64": "ghcr.io/converged-computing/hpcg-matrix:znver3-Ofast"
+                            },
+                            "direction": "maximize",
+                            "name": "memory_bandwidth_across_kernels_total",
+                            "filename": "lasso_model_memory_bandwidth_across_kernels_total.joblib"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "tag": "gflops_per_second_spmv",
+            "description": "Image selection driven by a performance prediction model.",
+            "rules": [
+                {
+                    "matchModel": {
+                        "model": {
+                            "type": "lasso",
+                            "platforms": {
+                                "arm64": "ghcr.io/converged-computing/hpcg-matrix:neoverse-v2-O2-arm",
+                                "amd64": "ghcr.io/converged-computing/hpcg-matrix:znver3-Ofast"
+                            },
+                            "direction": "maximize",
+                            "name": "gflops_per_second_spmv",
+                            "filename": "lasso_model_gflops_per_second_spmv.joblib"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "tag": "mpi_allreduce_max",
+            "description": "Image selection driven by a performance prediction model.",
+            "rules": [
+                {
+                    "matchModel": {
+                        "model": {
+                            "type": "lasso",
+                            "platforms": {
+                                "arm64": "ghcr.io/converged-computing/hpcg-matrix:neoverse-v2-O2-arm",
+                                "amd64": "ghcr.io/converged-computing/hpcg-matrix:znver3-Ofast"
+                            },
+                            "direction": "maximize",
+                            "name": "mpi_allreduce_max",
+                            "filename": "lasso_model_mpi_allreduce_max.joblib"
+                        }
+                    }
+                }
+            ]
+        },
+        {
             "tag": "duration",
             "description": "Image selection driven by a performance prediction model.",
             "rules": [
@@ -54,6 +256,26 @@
                             "direction": "minimize",
                             "name": "duration",
                             "filename": "lasso_model_duration.joblib"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "tag": "gflops_per_second_waxpby",
+            "description": "Image selection driven by a performance prediction model.",
+            "rules": [
+                {
+                    "matchModel": {
+                        "model": {
+                            "type": "lasso",
+                            "platforms": {
+                                "arm64": "ghcr.io/converged-computing/hpcg-matrix:neoverse-v2-O2-arm",
+                                "amd64": "ghcr.io/converged-computing/hpcg-matrix:znver3-Ofast"
+                            },
+                            "direction": "maximize",
+                            "name": "gflops_per_second_waxpby",
+                            "filename": "lasso_model_gflops_per_second_waxpby.joblib"
                         }
                     }
                 }

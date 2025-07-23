@@ -208,6 +208,7 @@ def parse_data(indir, outdir, files):
         if "test" in filename or "/models" in filename:
             continue
         p = add_hpcg_result(p, indir, filename)
+        p.df = p.df[p.df.metric.isin(['compatible', 'fom', 'duration'])]
 
     # Save stuff to file first
     p.df.to_csv(os.path.join(outdir, "hpcg-results.csv"))
@@ -314,11 +315,17 @@ def parse_metrics(indir, outdir, files):
         if metric == "total_cg_iterations":
             total_cg_iterations = p.df
         p.df.to_csv(os.path.join(data_outdir, "csv", f"hpcg_{metric}.csv"))
-        # Parse the "science per unit cost"
+        # Parse the "science per unit cost" and remove from fom df
         if metric == "fom":
             cost_df = p.df.copy()
             cost_df[cost_df.metric.isin(['compatible', 'fom_per_dollar'])]
             cost_df.to_csv(os.path.join(data_outdir, "csv", f"hpcg_fom_per_dollar.csv"))
+            p.df = p.df[p.df.metric.isin(['fom', 'compatible'])]
+
+        print(metric)
+        print(p.df.metric.unique())
+
+        # Remove fom per dollar if calculated
         instances = p.df.env.unique().tolist()
         build_config = p.df.problem_size.unique().tolist()
         df = pandas.DataFrame(0.0, columns=instances, index=list(build_config))

@@ -1,8 +1,15 @@
 # MLServer with Cached Features on EKS
 
-This experiment will compare two cases in an effort to maximize FOM.
+This experiment will compare models we found had R^2 >= 0.85, including:
 
-- running with a model to select instance type to maximize fom or units of fom per dollar
+- gflops_per_second_waxpby
+- gflops_per_second_spmv
+- memory_bandwidth_across_kernels_total
+- memory_bandwidth_across_kernels_write
+- fom (includes the first two to some extent)!
+
+We will compare all with:
+
 - running choosing at random.
 
 For this experiment, we would want to show that using the model improves the overall FOM at a rate that is significant. First, create the cluster that can autoscale. It has one set of "sticky nodes" to install things to.
@@ -29,6 +36,7 @@ kubectl apply -f eks-autoscaler.yaml
 ```
 
 Instance node selectors will be added that trigger an autoscaler. 
+
 
 ## 3. Setup Cluster
 
@@ -130,15 +138,15 @@ for i in $(seq 1 30); do
 done
 ```
 
-### Experiment to FOM Per Dollar Selection
+### Experiment for gflops_per_second_waxpby
 
 ```bash
-mkdir -p ./logs/hpcg/fom-per-dollar
+mkdir -p ./logs/hpcg/gflops-per-second-waxpby
 for i in $(seq 1 30); do
-  outdir=./logs/hpcg/fom-per-dollar/$i
+  outdir=./logs/hpcg/gflops-per-second-waxpby/$i
   mkdir -p $outdir
   if [[ -f "$outdir/hpcg.out" ]]; then
-    echo "$i was already run for fom-per-dollar"
+    echo "$i was already run"
     continue
   fi
   helm install \
@@ -150,7 +158,7 @@ for i in $(seq 1 30); do
   --set experiment.iterations=3 \
   --set experiment.exclusive=true \
   --set "label.oci\.image\.compatibilities\.selection/enabled"=true \
-  --set "annotation.oci\.image\.compatibilities\.selection/model"=fom_per_dollar \
+  --set "annotation.oci\.image\.compatibilities\.selection/model"=gflops_per_second_waxpby \
   --set "annotation.oci\.image\.compatibilities\.selection/image-ref"=ghcr.io/compspec/ocifit-k8s-compatibility:ml-example-with-random \
   hpcg ./hpcg-matrix
   sleep 3
@@ -164,6 +172,109 @@ for i in $(seq 1 30); do
 done
 ```
 
+### Experiment for gflops_per_second_spmv
+
+Note that nproc didn't work for the selected instance - it has 8vcpu and we need to just ask for 4.
+
+```bash
+mkdir -p ./logs/hpcg/gflops-per-second-spmv
+for i in $(seq 1 30); do
+  outdir=./logs/hpcg/gflops-per-second-spmv/$i
+  mkdir -p $outdir
+  if [[ -f "$outdir/hpcg.out" ]]; then
+    echo "$i was already run"
+    continue
+  fi
+  helm install \
+  --set experiment.nodes=1 \
+  --set minicluster.size=1 \
+  --set experiment.tasks=4 \
+  --set minicluster.save_logs=true \
+  --set minicluster.image=placeholder:latest \
+  --set experiment.iterations=3 \
+  --set experiment.exclusive=true \
+  --set "label.oci\.image\.compatibilities\.selection/enabled"=true \
+  --set "annotation.oci\.image\.compatibilities\.selection/model"=gflops_per_second_spmv \
+  --set "annotation.oci\.image\.compatibilities\.selection/image-ref"=ghcr.io/compspec/ocifit-k8s-compatibility:ml-example-with-random \
+  hpcg ./hpcg-matrix
+  sleep 3
+  time kubectl wait --for=condition=ready pod -l job-name=hpcg --timeout=600s
+  kubectl get pods > $outdir/pod-time.txt
+  pod=$(kubectl get pods -o json | jq  -r .items[0].metadata.name)
+  kubectl logs ${pod} -c hpcg -f |& tee $outdir/hpcg.out
+  kubectl get pod ${pod} -o json > $outdir/pod.json
+  helm uninstall hpcg
+  sleep 3
+done
+```
+
+### Experiment for memory_bandwidth_across_kernels_total
+
+```bash
+mkdir -p ./logs/hpcg/memory-bandwidth-across-kernels-total
+for i in $(seq 1 30); do
+  outdir=./logs/hpcg/memory-bandwidth-across-kernels-total/$i
+  mkdir -p $outdir
+  if [[ -f "$outdir/hpcg.out" ]]; then
+    echo "$i was already run"
+    continue
+  fi
+  helm install \
+  --set experiment.nodes=1 \
+  --set minicluster.size=1 \
+  --set experiment.tasks='$(nproc)' \
+  --set minicluster.save_logs=true \
+  --set minicluster.image=placeholder:latest \
+  --set experiment.iterations=3 \
+  --set experiment.exclusive=true \
+  --set "label.oci\.image\.compatibilities\.selection/enabled"=true \
+  --set "annotation.oci\.image\.compatibilities\.selection/model"=memory_bandwidth_across_kernels_total \
+  --set "annotation.oci\.image\.compatibilities\.selection/image-ref"=ghcr.io/compspec/ocifit-k8s-compatibility:ml-example-with-random \
+  hpcg ./hpcg-matrix
+  sleep 3
+  time kubectl wait --for=condition=ready pod -l job-name=hpcg --timeout=600s
+  kubectl get pods > $outdir/pod-time.txt
+  pod=$(kubectl get pods -o json | jq  -r .items[0].metadata.name)
+  kubectl logs ${pod} -c hpcg -f |& tee $outdir/hpcg.out
+  kubectl get pod ${pod} -o json > $outdir/pod.json
+  helm uninstall hpcg
+  sleep 3
+done
+```
+
+### Experiment for memory_bandwidth_across_kernels_write
+
+```bash
+mkdir -p ./logs/hpcg/memory-bandwidth-across-kernels-write
+for i in $(seq 1 30); do
+  outdir=./logs/hpcg/memory-bandwidth-across-kernels-write/$i
+  mkdir -p $outdir
+  if [[ -f "$outdir/hpcg.out" ]]; then
+    echo "$i was already run"
+    continue
+  fi
+  helm install \
+  --set experiment.nodes=1 \
+  --set minicluster.size=1 \
+  --set experiment.tasks='$(nproc)' \
+  --set minicluster.save_logs=true \
+  --set minicluster.image=placeholder:latest \
+  --set experiment.iterations=3 \
+  --set experiment.exclusive=true \
+  --set "label.oci\.image\.compatibilities\.selection/enabled"=true \
+  --set "annotation.oci\.image\.compatibilities\.selection/model"=memory_bandwidth_across_kernels_write \
+  --set "annotation.oci\.image\.compatibilities\.selection/image-ref"=ghcr.io/compspec/ocifit-k8s-compatibility:ml-example-with-random \
+  hpcg ./hpcg-matrix
+  sleep 3
+  time kubectl wait --for=condition=ready pod -l job-name=hpcg --timeout=600s
+  kubectl get pods > $outdir/pod-time.txt
+  pod=$(kubectl get pods -o json | jq  -r .items[0].metadata.name)
+  kubectl logs ${pod} -c hpcg -f |& tee $outdir/hpcg.out
+  kubectl get pod ${pod} -o json > $outdir/pod.json
+  helm uninstall hpcg
+  sleep 3
+done
+```
 
 That's it! We can compare the data (FOM values) to see if our model did better. This is a simple example, but could be expanded to be more advanced.
 

@@ -14,7 +14,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, Lasso
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import matplotlib.pyplot as plt
@@ -117,31 +117,11 @@ def parse_futex(item):
     lines = [x for x in item.split("\n") if x][1:-1]
     item = "\n".join(lines)
     models = json.loads(item)
-
-    # {'tgid': 3592,
-    # 'comm': 'containerd',
-    # 'cgroup_id': 6520,
-    # 'wait_duration_stats_ns': {'count': 1693.0,
-    #  'sum': 224436362166.99985,
-    #  'mean': 132567254.67631415,
-    #  'median': 221633.7996235165,
-    #  'min': 812,
-    #  'max': 25489918732,
-    #  'variance_ns2': 9.336119483708768e+17,
-    #  'iqr_ns': 97748409.18476921,
-    #  'q1_ns': 65205.02079568948,
-    #  'q3_ns': 97813614.2055649},
-    # 'futex_op_counts': {'128': 1693},
-    # 'first_seen_ts_ns': 1941370732957,
-    # 'last_seen_ts_ns': 1975537850634}
     for model_type, model_names in models.items():
         for model in model_names:
-            # Just concerned with app for now
             if model["comm"] != "xhpcg":
                 continue
-            # Add the median for now...
             median = model["wait_duration_stats_ns"]["median"]
-            # The number of times
             count = 0
             for futex_id, increment in model["futex_op_counts"].items():
                 count += increment
@@ -152,8 +132,6 @@ def load_node_features():
     """
     Read in NFD features.
     """
-    # First read in node features, get unique values
-    # For each unique value, get all possible options
     feature_file = os.path.abspath(
         os.path.join(here, "../../docs/node-explorer/node-features.json")
     )
@@ -170,7 +148,6 @@ def load_node_features():
         on_prem_features["node.kubernetes.io/instance-type"] = cluster
         features.append(on_prem_features)
 
-    # We also need to add the on-premises
     unique_features = set()
     feature_values = {}
 
@@ -184,7 +161,6 @@ def load_node_features():
                 feature_values[feature] = set()
             feature_values[feature].add(feature_value)
 
-    # Now we want to get rid of features that add no value
     feature_keepers = {}
 
     skip_features = "(%s)" % "|".join(["os_release.VERSION_ID.minor"])
@@ -193,15 +169,11 @@ def load_node_features():
             continue
         feature_keepers[feature] = sorted(list(feature_options))
 
-    # Create the start of columns - assume one hot encoding
-    # Note - found pandas can do this for me!
     columns = []
     for feature, feature_values in feature_keepers.items():
         for feature_value in feature_values:
             columns.append(f"{feature}_{feature_value}")
 
-    # Make feature family into a lookup
-    # TODO keep trying to run on dane / ruby / and get labels for corona190
     features = {
         x["node.kubernetes.io/instance-type"].split(".")[0]: x for x in features
     }
@@ -215,19 +187,17 @@ def add_plot_metrics(metrics, ax):
     i = 0
     for label, value in metrics.items():
         text_string = (
-            f"{label}: {value:.3f}"  # Format the string (e.g., 3 decimal places)
+            f"{label}: {value:.3f}"
         )
-
-        # Calculate the current y-coordinate for this metric
         current_y_coord = y_text_start - (i * y_text_offset)
         ax.text(
             x_text_coord,
             current_y_coord,
             text_string,
-            transform=ax.transAxes,  # Important: use axes coordinates (0 to 1)
+            transform=ax.transAxes,
             fontsize=12,
-            verticalalignment="top",  # Align text from its top
-            horizontalalignment="right",  # Align text from its right
+            verticalalignment="top",
+            horizontalalignment="right",
             bbox=dict(
                 boxstyle="round,pad=0.3", fc="white", ec="gray", lw=0.8, alpha=0.7
             ),
@@ -241,47 +211,25 @@ def parse_data(indir, outdir):
     """
     features, columns = load_node_features()
 
-    # We will also include optimization, cores, and micro-arch
     columns += ["optimization", "threads", "micro_arch"]
-
-    # And futex wait, cpu running and waiting
-    # TODO do we want to add ratio or too correlated?
     columns += ["futex_waiting_ns", "cpu_running_ns", "cpu_waiting_ns"]
-
-    # For each csv of something we want to predict (Y) assemble data frame
-    # These have been normalized to account for weak scaling
+    
     x_files = ["hpcg_processes.csv", "hpcg_threads_per_process.csv"]
     y_files = [
-        "hpcg_mpi_allreduce_avg.csv",
-        "hpcg_fom.csv",
-        "hpcg_total_cg_iterations.csv",
-        "hpcg_memory_used_data_total_gbytes.csv",
-        "hpcg_memory_bandwidth_across_kernels_write.csv",
-        "hpcg_gflops_per_second_ddot.csv",
-        "hpcg_gflops_per_second_mg.csv",
-        "hpcg_setup_time_seconds.csv",
-        "hpcg_memory_bandwidth_across_kernels_read.csv",
-        "hpcg_memory_bandwidth_across_kernels_total.csv",
-        "hpcg_gflops_per_second_spmv.csv",
-        "hpcg_mpi_allreduce_max.csv",
-        "hpcg_duration.csv",
-        "hpcg_mpi_allreduce_min.csv",
-        "hpcg_gflops_per_second_waxpby.csv",
-        "hpcg_fom_per_dollar.csv",
+        "hpcg_mpi_allreduce_avg.csv", "hpcg_fom.csv", "hpcg_total_cg_iterations.csv",
+        "hpcg_memory_used_data_total_gbytes.csv", "hpcg_memory_bandwidth_across_kernels_write.csv",
+        "hpcg_gflops_per_second_ddot.csv", "hpcg_gflops_per_second_mg.csv", "hpcg_setup_time_seconds.csv",
+        "hpcg_memory_bandwidth_across_kernels_read.csv", "hpcg_memory_bandwidth_across_kernels_total.csv",
+        "hpcg_gflops_per_second_spmv.csv", "hpcg_mpi_allreduce_max.csv", "hpcg_duration.csv",
+        "hpcg_mpi_allreduce_min.csv", "hpcg_gflops_per_second_waxpby.csv", "hpcg_fom_per_dollar.csv",
     ]
 
-    # First generate lookups for futex, cpu, and threads/cores
     for filename in x_files:
         x_df = pandas.read_csv(os.path.join(here, "data", "heatmap", "csv", filename))
         for _, row in x_df.iterrows():
-            if row.metric == "compatible":
-                continue
+            if row.metric == "compatible": continue
             family = row.env.split(".")[0]
-
-            # Use a lookup as we go. We don't have on-premises ebpf
             if row.filename not in futex_lookup and "on-premises" not in row.filename:
-
-                # Assume we haven't seen futex or cpu
                 futex_lookup[row.filename] = {}
                 cpu_lookup[row.filename] = {}
                 futex_item = ps.read_file(row.filename.replace("hpcg.out", "futex.out"))
@@ -290,22 +238,12 @@ def parse_data(indir, outdir):
                     futex_lookup[row.filename][name] = value
                 for name, value, _ in parse_cpu(cpu_item):
                     cpu_lookup[row.filename][name] = value
-
-            # These are consistent across instance types
-            # IMPORTANT - in this study we just do one size / type
             if row.metric == "processes":
                 proc_lookup[family] = row.value
             elif row.metric == "threads_per_process":
                 thread_lookup[family] = row.value
 
-    # These features need one hot encoding
-    # Don't include cores - we normalized data by count
-    numerical_columns = [
-        "threads",
-        "futex_waiting_ns",
-        "cpu_waiting_ns",
-        "cpu_running_ns",
-    ]
+    numerical_columns = ["threads", "futex_waiting_ns", "cpu_waiting_ns", "cpu_running_ns"]
     categorical_columns = [x for x in columns if x not in numerical_columns]
 
     models_dir = os.path.join(outdir, "models")
@@ -316,267 +254,177 @@ def parse_data(indir, outdir):
     interface_data = []
     seen = set()
 
-    # Now generate models!
     for filename in y_files:
-        # Here is our feature df
         df = pandas.DataFrame(columns=columns)
         y_df = pandas.read_csv(os.path.join(here, "data", "heatmap", "csv", filename))
         y_actual = []
         for _, row in y_df.iterrows():
-            if row.metric == "compatible":
-                continue
-
-            if "dollar" in filename:
-                row.metric = "fom_per_dollar"
-
+            if row.metric == "compatible": continue
+            if "dollar" in filename: row.metric = "fom_per_dollar"
             family = row.env.split(".")[0]
             if family not in features:
                 if family not in seen:
                     print(f"{family} missing from features - Vanessa add it!")
                     seen.add(family)
                 continue
-
-            # This is the Y to predict
             y_actual.append(float(row.value))
-
-            # Once we get here, we have the values
-            # Assemble the features for the node, we only need to know
             feature_vector = []
             for column in columns:
                 if column.startswith("feature.node"):
-                    # Look up feature by instance name
                     feature_vector.append(features[family][column])
-
-            # Last set are:
-            # opt, cores, threads, micro_arch, futex_waiting_ns, cpu_running_ns, cpu_waiting_ns, y_pred
             opt, micro_arch = row.problem_size.rsplit("-", 1)
-            cpu_running = None
-            cpu_waiting = None
-            futex_time = None
+            cpu_running, cpu_waiting, futex_time = None, None, None
             if "on-premises" not in row.filename:
                 cpu_running = cpu_lookup[row.filename].get("cpu_running_ns")
                 cpu_waiting = cpu_lookup[row.filename].get("cpu_waiting_ns")
                 futex_time = futex_lookup[row.filename].get("median_futex_wait")
-            feature_vector += [
-                opt,
-                thread_lookup[family],
-                micro_arch,
-                futex_time,
-                cpu_running,
-                cpu_waiting,
-            ]
+            feature_vector += [opt, thread_lookup[family], micro_arch, futex_time, cpu_running, cpu_waiting]
             iteration = row.iteration
             uid = f"{row.env}.{row.problem_size}.{iteration}"
-            # on-premises runs have repeat iteration numbers for different ones
             while uid in df.index:
                 iteration += 1
                 uid = f"{row.env}.{row.problem_size}.{iteration}"
             df.loc[uid, columns] = feature_vector
 
-        # When we get here, we need to hot one encode
-        preprocessor = ColumnTransformer(
+        preprocessor_lr = ColumnTransformer(
             transformers=[
-                (
-                    "cat",
-                    OneHotEncoder(handle_unknown="ignore", drop="first"),
-                    categorical_columns,
-                ),
-                (
-                    "num",
-                    StandardScaler(),
-                    numerical_columns,
-                ),  # passthrough would skip normalization
+                ("cat", OneHotEncoder(handle_unknown="ignore", drop="first"), categorical_columns),
+                ("num", StandardScaler(), numerical_columns),
+            ]
+        )
+        
+        preprocessor_rf = ColumnTransformer(
+            transformers=[
+                ("cat", OneHotEncoder(handle_unknown="ignore", drop="first"), categorical_columns),
+                ("num", "passthrough", numerical_columns),
             ]
         )
 
-        # Create a pipeline with preprocessing and a model - linear regression. I'm simple
-        pipeline = Pipeline(
-            steps=[
-                ("preprocessor", preprocessor),
-                ("regressor", LinearRegression()),
-            ]
-        )
-
-        # TODO: consider not including eBPF if not meaningful because we have to drop
         df["y"] = y_actual
         df = df.dropna()
         y_actual = df["y"]
         df = df.drop("y", axis=1)
 
-        # Split the data (using the original X, y)
-        X_train, X_test, y_train, y_test = train_test_split(
-            df, y_actual, test_size=0.2, random_state=42
-        )
-
-        # Fit linear regression
-        pipeline.fit(X_train, y_train)
-        y_pred = pipeline.predict(X_test)
-        mae_lr = mean_absolute_error(y_test, y_pred)
-        mse_lr = mean_squared_error(y_test, y_pred)
-        r2_lr = r2_score(y_test, y_pred)
-        print(row.metric)
-        print(f"Linear Regression (Unscaled) - MAE: {mae_lr:.2f}")
-        print(f"Linear Regression (Unscaled) - MSE: {mse_lr:.2f}")
-        print(f"Linear Regression (Unscaled) - R2 Score: {r2_lr:.2f}")
-
-        # Plot predictions vs actuals
-        metrics = {"MAE": mae_lr, "MSE": mse_lr, "R2 Score": r2_lr}
+        X_train, X_test, y_train, y_test = train_test_split(df, y_actual, test_size=0.2, random_state=42)
+        
         title = " ".join([x.capitalize() for x in row.metric.split("_")])
+
+        # --- Linear Regression ---
+        pipeline_lr = Pipeline(steps=[("preprocessor", preprocessor_lr), ("regressor", LinearRegression())])
+        pipeline_lr.fit(X_train, y_train)
+        y_pred_lr = pipeline_lr.predict(X_test)
+        metrics_lr = {
+            "MAE": mean_absolute_error(y_test, y_pred_lr),
+            "MSE": mean_squared_error(y_test, y_pred_lr),
+            "R2 Score": r2_score(y_test, y_pred_lr)
+        }
+        print(f"\n--- {row.metric} ---")
+        print(f"Linear Regression - MAE: {metrics_lr['MAE']:.2f}, MSE: {metrics_lr['MSE']:.2f}, R2: {metrics_lr['R2 Score']:.2f}")
+
         plt.figure(figsize=(8, 6))
-        ax = sns.regplot(
-            x=y_test, y=y_pred, scatter_kws={"alpha": 0.3}, line_kws={"color": "red"}
-        )
+        ax = sns.regplot(x=y_test, y=y_pred_lr, scatter_kws={"alpha": 0.3}, line_kws={"color": "red"})
         plt.title(f"Linear Regression: Actual vs. Predicted ({title})")
-        plt.xlabel("Actual Values")
-        plt.ylabel("Predicted Values")
-        add_plot_metrics(metrics, ax)
-        plt.grid(True)
-        plt.tight_layout()
-        plt.savefig(
-            os.path.join(models_dir, f"xhpcg_{row.metric}_linear_regression.svg")
-        )
-        plt.clf()
-        plt.close()
+        plt.xlabel("Actual Values"); plt.ylabel("Predicted Values")
+        add_plot_metrics(metrics_lr, ax); plt.grid(True); plt.tight_layout()
+        plt.savefig(os.path.join(models_dir, f"xhpcg_{row.metric}_linear_regression.svg"))
+        plt.clf(); plt.close()
 
-        # Save linear model pipeline for shapley
-        lm_pipeline = copy.deepcopy(pipeline)
-
-        # Random forest
-        pipeline = Pipeline(
-            steps=[
-                (
-                    "preprocessor",
-                    ColumnTransformer(
-                        transformers=[
-                            (
-                                "cat",
-                                OneHotEncoder(handle_unknown="ignore", drop="first"),
-                                categorical_columns,
-                            ),
-                            ("num", "passthrough", numerical_columns),
-                        ]
-                    ),
-                ),
-                ("regressor", RandomForestRegressor(n_estimators=100, random_state=42)),
-            ]
-        )
-        pipeline.fit(X_train, y_train)
-        y_pred = pipeline.predict(X_test)
-        mae_rf = mean_absolute_error(y_test, y_pred)
-        mse_rf = mean_squared_error(y_test, y_pred)
-        r2_rf = r2_score(y_test, y_pred)
-        metrics = {"MAE": mae_rf, "MSE": mse_rf, "R2 Score": r2_rf}
-
-        print(f"Random Forest Regressor - MAE: {mae_rf:.2f}")
-        print(f"Random Forest Regressor - MSE: {mse_rf:.2f}")
-        print(f"Random Forest Regressor - R2 Score: {r2_rf:.2f}")
+        # --- Random Forest Regressor ---
+        pipeline_rf = Pipeline(steps=[("preprocessor", preprocessor_rf), ("regressor", RandomForestRegressor(n_estimators=100, random_state=42))])
+        pipeline_rf.fit(X_train, y_train)
+        y_pred_rf = pipeline_rf.predict(X_test)
+        metrics_rf = {
+            "MAE": mean_absolute_error(y_test, y_pred_rf),
+            "MSE": mean_squared_error(y_test, y_pred_rf),
+            "R2 Score": r2_score(y_test, y_pred_rf)
+        }
+        print(f"Random Forest - MAE: {metrics_rf['MAE']:.2f}, MSE: {metrics_rf['MSE']:.2f}, R2: {metrics_rf['R2 Score']:.2f}")
 
         plt.figure(figsize=(8, 6))
-        ax = sns.regplot(
-            x=y_test, y=y_pred, scatter_kws={"alpha": 0.3}, line_kws={"color": "red"}
-        )
-        plt.title(f"Random Forest Regressor: Actual vs. Predicted ({title})")
-        plt.xlabel("Actual Values")
-        plt.ylabel("Predicted Values")
-        add_plot_metrics(metrics, ax)
-        plt.grid(True)
-        plt.tight_layout()
+        ax = sns.regplot(x=y_test, y=y_pred_rf, scatter_kws={"alpha": 0.3}, line_kws={"color": "green"})
+        plt.title(f"Random Forest: Actual vs. Predicted ({title})")
+        plt.xlabel("Actual Values"); plt.ylabel("Predicted Values")
+        add_plot_metrics(metrics_rf, ax); plt.grid(True); plt.tight_layout()
         plt.savefig(os.path.join(models_dir, f"xhpcg_{row.metric}_random_forest.svg"))
-        plt.clf()
-        plt.close()
+        plt.clf(); plt.close()
+        
+        # --- LASSO Regression
+        # Use the same preprocessor as Linear Regression (with StandardScaler)
+        pipeline_lasso = Pipeline(steps=[
+            ("preprocessor", preprocessor_lr), 
+            # Alpha is the regularization strength. Higher values lead to more feature coefficients being zero.
+            ("regressor", Lasso(alpha=0.1, random_state=42)) 
+        ])
+        pipeline_lasso.fit(X_train, y_train)
+        y_pred_lasso = pipeline_lasso.predict(X_test)
+        metrics_lasso = {
+            "MAE": mean_absolute_error(y_test, y_pred_lasso),
+            "MSE": mean_squared_error(y_test, y_pred_lasso),
+            "R2 Score": r2_score(y_test, y_pred_lasso)
+        }
+        print(f"LASSO Regression - MAE: {metrics_lasso['MAE']:.2f}, MSE: {metrics_lasso['MSE']:.2f}, R2: {metrics_lasso['R2 Score']:.2f}")
 
-        # Save data with y_preds added
+        plt.figure(figsize=(8, 6))
+        ax = sns.regplot(x=y_test, y=y_pred_lasso, scatter_kws={"alpha": 0.3}, line_kws={"color": "purple"})
+        plt.title(f"LASSO Regression: Actual vs. Predicted ({title})")
+        plt.xlabel("Actual Values"); plt.ylabel("Predicted Values")
+        add_plot_metrics(metrics_lasso, ax); plt.grid(True); plt.tight_layout()
+        plt.savefig(os.path.join(models_dir, f"xhpcg_{row.metric}_lasso_regression.svg"))
+        plt.clf(); plt.close()
+
         df["y_actual"] = y_actual
         df.to_csv(os.path.join(models_dir, f"features_{filename}"))
 
-        # Use the linear model - trees are more likely to overfit I think
-        preprocessor = lm_pipeline.named_steps["preprocessor"]
-        regressor = lm_pipeline.named_steps["regressor"]
+        # SHAP Analysis for LASSO
+        print(f"Generating SHAP values for LASSO model...")
+        preprocessor = pipeline_lasso.named_steps["preprocessor"]
+        regressor = pipeline_lasso.named_steps["regressor"]
         X_train_transformed_background = preprocessor.transform(X_train)
         X_test_transformed = preprocessor.transform(X_test)
 
-        # This will issue an error later if it isn't a float array
-        X_train_transformed_background = X_train_transformed_background.toarray()
-        X_train_transformed_background = X_train_transformed_background.astype(
-            numpy.float32
-        )
+        if hasattr(X_train_transformed_background, 'toarray'):
+            X_train_transformed_background = X_train_transformed_background.toarray()
+        X_train_transformed_background = X_train_transformed_background.astype(numpy.float32)
 
         feature_names_out = preprocessor.get_feature_names_out()
 
-        # Which features are meaningful?
+        # Use LinearExplainer for LASSO, as it's a linear model
         explainer = shap.LinearExplainer(regressor, X_train_transformed_background)
-        X_test_transformed = X_test_transformed.toarray()
+        
+        if hasattr(X_test_transformed, 'toarray'):
+            X_test_transformed = X_test_transformed.toarray()
         X_test_transformed = X_test_transformed.astype(numpy.float32)
-        X_test_transformed_df = pandas.DataFrame(
-            X_test_transformed, columns=feature_names_out
-        )
+        X_test_transformed_df = pandas.DataFrame(X_test_transformed, columns=feature_names_out)
 
-        # DRUMROLL!
         shap_values = explainer.shap_values(X_test_transformed_df)
 
-        # Get relative contribution of top features
         shap_sum = numpy.abs(shap_values).mean(axis=0)
         indices = numpy.argsort(shap_sum)[::-1]
         top_n_features = [feature_names_out[i] for i in indices[:3]]
 
         plt.figure(figsize=(12, 10))
-        shap.summary_plot(
-            shap_values, X_test_transformed_df, show=False, plot_type="bar"
-        )
-        metric = " ".join(
-            [x.capitalize() for x in row.metric.replace("_", " ").split(" ")]
-        )
-        metric = metric.replace("fom", "FOM")
+        shap.summary_plot(shap_values, X_test_transformed_df, show=False, plot_type="bar")
+        metric = " ".join([x.capitalize() for x in row.metric.replace("_", " ").split(" ")]).replace("fom", "FOM")
         plt.subplots_adjust(left=0.35, bottom=0.15, right=1.1)
-        plt.title(f"SHAP Global Feature Importance for {metric}", loc="left")
-        plt.savefig(
-            os.path.join(models_dir, f"shap_summary_{row.metric}_bar.svg"),
-            bbox_inches="tight",
-        )
-        plt.clf()
-        plt.close()
+        plt.title(f"SHAP Global Feature Importance for {metric} (LASSO)", loc="left") # <--- MODIFIED
+        plt.savefig(os.path.join(models_dir, f"shap_summary_{row.metric}_bar.svg"), bbox_inches="tight")
+        plt.clf(); plt.close()
 
         plt.figure(figsize=(12, 10))
         shap.summary_plot(shap_values, X_test_transformed_df, show=False)
-        plt.title(f"SHAP Global Feature Importance for {metric}", loc="left")
+        plt.title(f"SHAP Global Feature Importance for {metric} (LASSO)", loc="left") # <--- MODIFIED
         plt.subplots_adjust(left=0.35, bottom=0.15)
-        plt.savefig(
-            os.path.join(models_dir, f"shap_summary_{row.metric}_dot.svg"),
-            bbox_inches="tight",
-        )
-        plt.clf()
-        plt.close()
-
-        #shap_interaction_values = tree_explainer.shap_interaction_values(X_test)
-        #plt.figure(figsize=(12, 10))
-        ##shap.summary_plot(shap_interaction_values, X_test_transformed_df)
-        #plt.subplots_adjust(left=0.35, bottom=0.15)
-        #plt.savefig(
-        #    os.path.join(models_dir, f"shap_summary_{row.metric}_interactions.svg"),
-        #    bbox_inches="tight",
-        #)
-        #plt.clf()
-        #plt.close()
-        interface_data.append(
-            {
-                "id": row.metric,
-                "displayName": metric,
-                "dotImagePath": f"shap_summary_{row.metric}_dot.svg",
-                "barImagePath": f"shap_summary_{row.metric}_bar.svg",
-            }
-        )
+        plt.savefig(os.path.join(models_dir, f"shap_summary_{row.metric}_dot.svg"), bbox_inches="tight")
+        plt.clf(); plt.close()
+        interface_data.append({
+            "id": row.metric,
+            "displayName": metric,
+            "dotImagePath": f"shap_summary_{row.metric}_dot.svg",
+            "barImagePath": f"shap_summary_{row.metric}_bar.svg",
+        })
         top_features = "\n" + "\n".join(top_n_features)
         print(f"Top SHAP features for {metric}: {top_features}")
         top_features_json[row.metric] = top_n_features
-        # for feature_name in top_n_features:
-        #    plt.figure()
-        #    shap.dependence_plot(feature_name, shap_values, X_test_transformed_df, interaction_index="auto", show=False)
-        #    # You can also specify a particular feature name for `interaction_index`.
-        #    plt.title(f"SHAP Dependence Plot for {metric} and '{feature_name}'")
-        #    plt.tight_layout()
-        #    plt.savefig(os.path.join(models_dir, f"shap_dependence_{feature_name.replace(' ', '_').replace('/', '_')}.png"))
-        #    plt.clf()
-        #    plt.close()
 
     ps.write_json(top_features_json, os.path.join(models_dir, "top-features.json"))
     ps.write_json(interface_data, os.path.join(models_dir, "metric-data.json"))
