@@ -96,6 +96,9 @@ spec:
           value: /etc/webhook/certs/tls.crt
         - name: TLS_KEY_PATH
           value: /etc/webhook/certs/tls.key
+        # This is our sticky node
+        - name: SKIP_INSTANCE_TYPES
+          value: t3.2xlarge
         - name: FEATURES_CACHE_DIR
           value: /etc/features-cache
         volumeMounts:
