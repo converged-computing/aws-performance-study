@@ -183,12 +183,13 @@ def add_hpcg_result(p, indir, filename, ebpf=None, gpu=False, metrics=None):
         others[key] = values
 
     # If we have fom and duration, calculate cost per unit of fom.
-    if "fom" in metrics:
-        durations = [float(x.rsplit("=", 1)[-1]) for x in lines if "Benchmark Time Summary::Total" in x]
-        # Convert units of seconds to hours to be in same time unit as cost
-        fraction_of_hour = [x/3600 for x in durations]
-        total_costs = [ps.cost_lookup[instance]*cost for i,cost in enumerate(fraction_of_hour)]
-        others['fom_per_dollar'] = [fom_value/total_costs[i] for i,fom_value in enumerate(others['fom'])]
+    # if "fom" in metrics:
+    #    durations = [float(x.rsplit("=", 1)[-1]) for x in lines if "Benchmark Time Summary::Total" in x]
+    #    # Convert units of seconds to hours to be in same time unit as cost
+    #    fraction_of_hour = [x/3600 for x in durations]
+    #    total_costs = [ps.cost_lookup[instance]*cost for i,cost in enumerate(fraction_of_hour)]
+    #    # This should be fom per CORE per dollar
+    #   others['fom_per_dollar'] = [fom_value/ps.core_lookup[instance]/total_costs[i] for i,fom_value in enumerate(others['fom'])]
 
     for key, values in others.items():
         # The ordering is consistent between lists
@@ -315,6 +316,7 @@ def parse_metrics(indir, outdir, files):
         if metric == "total_cg_iterations":
             total_cg_iterations = p.df
         p.df.to_csv(os.path.join(data_outdir, "csv", f"hpcg_{metric}.csv"))
+
         # Parse the "science per unit cost" and remove from fom df
         if metric == "fom":
             cost_df = p.df.copy()
@@ -360,6 +362,8 @@ def parse_metrics(indir, outdir, files):
             df.loc[row.problem_size, row.env] = value
             idx += 1
 
+        print(f"Metric {metric} has {p.df.shape[0]} datums.")
+        p.df.to_csv(os.path.join(data_outdir, "csv", f"hpcg_{metric}_normalized.csv"))
         fig = plt.figure(figsize=(24, 24))
         axes = []
         gs = plt.GridSpec(1, 2, width_ratios=[7, 0])

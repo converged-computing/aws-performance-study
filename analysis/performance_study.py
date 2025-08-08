@@ -445,6 +445,7 @@ core_lookup = {
     "c6a.16xlarge": 32,
     "m6a.12xlarge": 24,
     "r6a.12xlarge": 24,
+    "r7g.12xlarge": 48,
     "poodle4": 56,
     "borax26": 36,
     "boraxo17": 36,

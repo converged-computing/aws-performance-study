@@ -21,6 +21,7 @@ eksctl create cluster --config-file ./eks-config.yaml
 aws eks update-kubeconfig --region us-east-1 --name nfd-cluster
 ```
 
+
 Note that we are using an artifact that specifies random is OK. This is how the selection artifact was generated. It has 2 models, and we will use one for figure of merit (fom) and then one that specifies random selection.
 
 ```bash
@@ -84,6 +85,7 @@ for i in $(seq 1 30); do
   fi
   helm install \
   --set experiment.nodes=1 \
+  --set experiment.tasks=all \
   --set minicluster.size=1 \
   --set minicluster.save_logs=true \
   --set minicluster.image=placeholder:latest \
@@ -106,6 +108,8 @@ done
 
 ### Experiment to FOM Selection
 
+*Selected hpc7g and confirmed used 64 cores for all*
+
 ```bash
 mkdir -p ./logs/hpcg/fom-model
 for i in $(seq 1 30); do
@@ -118,7 +122,6 @@ for i in $(seq 1 30); do
   helm install \
   --set experiment.nodes=1 \
   --set minicluster.size=1 \
-  --set experiment.tasks='$(nproc)' \
   --set minicluster.save_logs=true \
   --set minicluster.image=placeholder:latest \
   --set experiment.iterations=3 \
@@ -140,10 +143,12 @@ done
 
 ### Experiment for gflops_per_second_waxpby
 
+*Selected c7a.12xlarge and confirmed used 48 cores for all*
+
 ```bash
-mkdir -p ./logs/hpcg/gflops-per-second-waxpby
+mkdir -p ./logs/hpcg/gflops-per-second-waxpby-normalized
 for i in $(seq 1 30); do
-  outdir=./logs/hpcg/gflops-per-second-waxpby/$i
+  outdir=./logs/hpcg/gflops-per-second-waxpby-normalized/$i
   mkdir -p $outdir
   if [[ -f "$outdir/hpcg.out" ]]; then
     echo "$i was already run"
@@ -152,7 +157,6 @@ for i in $(seq 1 30); do
   helm install \
   --set experiment.nodes=1 \
   --set minicluster.size=1 \
-  --set experiment.tasks='$(nproc)' \
   --set minicluster.save_logs=true \
   --set minicluster.image=placeholder:latest \
   --set experiment.iterations=3 \
@@ -177,9 +181,9 @@ done
 Note that nproc didn't work for the selected instance - it has 8vcpu and we need to just ask for 4.
 
 ```bash
-mkdir -p ./logs/hpcg/gflops-per-second-spmv
+mkdir -p ./logs/hpcg/gflops-per-second-spmv-final
 for i in $(seq 1 30); do
-  outdir=./logs/hpcg/gflops-per-second-spmv/$i
+  outdir=./logs/hpcg/gflops-per-second-spmv-final/$i
   mkdir -p $outdir
   if [[ -f "$outdir/hpcg.out" ]]; then
     echo "$i was already run"
@@ -187,8 +191,8 @@ for i in $(seq 1 30); do
   fi
   helm install \
   --set experiment.nodes=1 \
+  --set experiment.tasks=all \
   --set minicluster.size=1 \
-  --set experiment.tasks=4 \
   --set minicluster.save_logs=true \
   --set minicluster.image=placeholder:latest \
   --set experiment.iterations=3 \
@@ -211,9 +215,9 @@ done
 ### Experiment for memory_bandwidth_across_kernels_total
 
 ```bash
-mkdir -p ./logs/hpcg/memory-bandwidth-across-kernels-total
+mkdir -p ./logs/hpcg/memory-bandwidth-across-kernels-total-normalized
 for i in $(seq 1 30); do
-  outdir=./logs/hpcg/memory-bandwidth-across-kernels-total/$i
+  outdir=./logs/hpcg/memory-bandwidth-across-kernels-total-normalized/$i
   mkdir -p $outdir
   if [[ -f "$outdir/hpcg.out" ]]; then
     echo "$i was already run"
@@ -245,9 +249,9 @@ done
 ### Experiment for memory_bandwidth_across_kernels_write
 
 ```bash
-mkdir -p ./logs/hpcg/memory-bandwidth-across-kernels-write
+mkdir -p ./logs/hpcg/memory-bandwidth-across-kernels-write-normalized
 for i in $(seq 1 30); do
-  outdir=./logs/hpcg/memory-bandwidth-across-kernels-write/$i
+  outdir=./logs/hpcg/memory-bandwidth-across-kernels-write-normalized/$i
   mkdir -p $outdir
   if [[ -f "$outdir/hpcg.out" ]]; then
     echo "$i was already run"

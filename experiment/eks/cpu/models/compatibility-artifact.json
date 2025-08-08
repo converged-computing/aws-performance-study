@@ -2,6 +2,24 @@
     "version": "v1alpha1",
     "compatibilities": [
         {
+            "tag": "random",
+            "description": "Random image selection",
+            "rules": [
+                {
+                    "matchModel": {
+                        "model": {
+                            "platforms": {
+                                "arm64": "ghcr.io/converged-computing/hpcg-matrix:neoverse-v2-O2-arm",
+                                "amd64": "ghcr.io/converged-computing/hpcg-matrix:znver3-Ofast"
+                            },
+                            "direction": "random",
+                            "name": "random"
+                        }
+                    }
+                }
+            ]
+        },
+        {
             "tag": "mpi_allreduce_avg",
             "description": "Image selection driven by a performance prediction model.",
             "rules": [
