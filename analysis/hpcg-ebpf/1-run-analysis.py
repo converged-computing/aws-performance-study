@@ -9,6 +9,7 @@ import json
 from scipy.cluster.hierarchy import linkage, dendrogram
 from scipy.spatial.distance import pdist
 import matplotlib.pylab as plt
+from matplotlib.colors import ListedColormap
 import seaborn as sns
 
 here = os.path.dirname(os.path.abspath(__file__))
@@ -209,7 +210,7 @@ def parse_data(indir, outdir, files):
         if "test" in filename or "/models" in filename:
             continue
         p = add_hpcg_result(p, indir, filename)
-        p.df = p.df[p.df.metric.isin(['compatible', 'fom', 'duration'])]
+        p.df = p.df[p.df.metric.isin(["compatible", "fom", "duration"])]
 
     # Save stuff to file first
     p.df.to_csv(os.path.join(outdir, "hpcg-results.csv"))
@@ -320,9 +321,9 @@ def parse_metrics(indir, outdir, files):
         # Parse the "science per unit cost" and remove from fom df
         if metric == "fom":
             cost_df = p.df.copy()
-            cost_df[cost_df.metric.isin(['compatible', 'fom_per_dollar'])]
+            cost_df[cost_df.metric.isin(["compatible", "fom_per_dollar"])]
             cost_df.to_csv(os.path.join(data_outdir, "csv", f"hpcg_fom_per_dollar.csv"))
-            p.df = p.df[p.df.metric.isin(['fom', 'compatible'])]
+            p.df = p.df[p.df.metric.isin(["fom", "compatible"])]
 
         print(metric)
         print(p.df.metric.unique())
@@ -337,8 +338,10 @@ def parse_metrics(indir, outdir, files):
             if row.metric == "compatible":
                 continue
             # Divide by the number of procs of the instance type
+            # Talked to Dan
             if metric in divide_by_n:
-                value = float(row.value) / ps.core_lookup[row.env]
+                value = ps.core_lookup[row.env]
+                # value = float(row.value) / ps.core_lookup[row.env]
             elif metric in raw_values:
                 value = float(row.value)
             elif metric in divide_by_iterations:
@@ -363,15 +366,20 @@ def parse_metrics(indir, outdir, files):
             idx += 1
 
         print(f"Metric {metric} has {p.df.shape[0]} datums.")
+        print(p.df.metric.unique())
         p.df.to_csv(os.path.join(data_outdir, "csv", f"hpcg_{metric}_normalized.csv"))
         fig = plt.figure(figsize=(24, 24))
         axes = []
         gs = plt.GridSpec(1, 2, width_ratios=[7, 0])
         axes.append(fig.add_subplot(gs[0, 0]))
         sns.set_style("whitegrid")
+        mask = df == 0.0
+        cmap = plt.get_cmap("crest")
+        cmap.set_bad("#F7F7F7")
         g1 = sns.clustermap(
             df,
-            cmap="crest",
+            mask=mask,
+            cmap=cmap,
             annot=False,
         )
         title = " ".join([x.capitalize() for x in metric.split("_")])
@@ -500,9 +508,11 @@ def plot_results(df, outdir):
     # Now we want to calculate the cost per unit of science.
     # Add cost per hour
     data_outdir = os.path.join(outdir, "heatmap")
-    cost_df = pandas.read_csv(os.path.join(data_outdir, "csv", f"hpcg_fom_per_dollar.csv"), index_col=0)
+    cost_df = pandas.read_csv(
+        os.path.join(data_outdir, "csv", f"hpcg_fom_per_dollar.csv"), index_col=0
+    )
     cost_df.index = cost_df.problem_size.tolist()
-    
+
     fom_cost_df = pandas.DataFrame(0.0, columns=instances, index=list(build_config))
     fom_df = pandas.DataFrame(0.0, columns=instances, index=list(build_config))
     idx = 0
