@@ -524,39 +524,6 @@ cost_lookup = {
     'dane1345':  0.3584,
 }
 
-memory_lookup = {
-    "c6a.16xlarge": 2.448,
-    "c6i.16xlarge": 2.72,
-    "c6id.12xlarge": 2.4192,
-    "c6in.12xlarge": 2.7216,
-    "c7g.16xlarge": 2.32,
-    "d3.4xlarge": 1.998,
-    "hpc6a.48xlarge": 2.88,
-    "hpc7g.16xlarge": 1.6832,
-    "inf2.8xlarge": 1.9679,
-    "m6a.12xlarge": 2.0736,
-    "m6i.12xlarge": 2.304,
-    "t3.2xlarge": 0.3328,
-    "t3a.2xlarge": 0.3008,
-    "m6g.12xlarge": 1.848,
-    "c7a.12xlarge": 2.4634,
-    "i4i.8xlarge": 2.746,
-    "m6id.12xlarge": 2.8476,
-    "r6a.12xlarge": 2.7216,
-    "m7g.16xlarge": 2.6112,
-    "t4g.2xlarge": 0.2688,
-    "r7iz.8xlarge": 2.976,
-    "r6i.8xlarge": 2.016,
-    "r7g.12xlarge": 2.5704,
-    "poodle4": 1.5,
-    "borax26": 2.772,
-    "boraxo17": 2.772,
-    "corona190": 1.2144,
-    "tioga25": 5.7472,
-    "ruby1432": 0.3584,
-    'dane1345':  0.3584,
-}
-
 
 def find_section(lines, key):
     """
