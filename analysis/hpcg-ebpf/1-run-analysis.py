@@ -436,6 +436,7 @@ def plot_results(df, outdir):
         # Only plot fom, compatible, and duration here
         # We will show the rest in the interactive plot
         if metric not in ["fom", "duration", "compatible"]:
+        if metric not in ["fom", "duration", "compatible"]:
             continue
         for instance, data_frame in instances.items():
             instance_set.add(instance)

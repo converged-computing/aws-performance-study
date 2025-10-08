@@ -213,8 +213,8 @@ def parse_data(indir, outdir):
     Parse filepaths for environment, etc., and results files for data.
     """
     features, columns = load_node_features()
-
-    columns += ["optimization", "threads", "memory_gib", "cores", "cost", "micro_arch"]
+    # columns += ["optimization", "threads", "memory_gib", "cores", "cost", "micro_arch"]
+    columns += ["optimization", "threads", "memory_gib", "cores", "micro_arch"]
     columns += ["futex_waiting_ns", "cpu_running_ns", "cpu_waiting_ns"]
 
     x_files = ["hpcg_processes.csv", "hpcg_threads_per_process.csv"]
@@ -261,7 +261,7 @@ def parse_data(indir, outdir):
         "threads",
         "memory_gib",
         "cores",
-        "cost",
+#        "cost",
         "futex_waiting_ns",
         "cpu_waiting_ns",
         "cpu_running_ns",
@@ -280,6 +280,7 @@ def parse_data(indir, outdir):
     # Here we need to leave out each instance type, so keep track of their indices
     for filename in y_files:
         df = pandas.DataFrame(columns=columns)
+        df_minimal = pandas.DataFrame(columns=["threads", "memory_gib", "cores", "cost"])
         if filename != "hpcg_fom.csv":
             continue
         y_df = pandas.read_csv(os.path.join(here, "data", "heatmap", "csv", filename))
@@ -313,7 +314,7 @@ def parse_data(indir, outdir):
                 thread_lookup[family],
                 ps.memory_lookup[row.env],
                 ps.core_lookup[row.env],
-                ps.cost_lookup[row.env],
+#                ps.cost_lookup[row.env],
                 micro_arch,
                 futex_time,
                 cpu_running,
@@ -325,15 +326,28 @@ def parse_data(indir, outdir):
                 iteration += 1
                 uid = f"{row.env}.{row.problem_size}.{iteration}"
             df.loc[uid, columns] = feature_vector
+            df_minimal.loc[uid, ["threads", "memory_gib", "cores", "cost"]] = [thread_lookup[family], ps.memory_lookup[row.env],ps.core_lookup[row.env],ps.cost_lookup[row.env]]
 
         # Handle y and instance types
         df["y"] = y_actual
         df["instance_types"] = instance_types
+        df_minimal["y"] = y_actual
+        df_minimal["instance_types"] = instance_types
+
         df = df.dropna()
+        df_minimal = df_minimal.dropna()
+
         y_actual = df["y"]
+        y_minimal_actual = df["y"]
+
         instance_types = df["instance_types"]
+        instance_types_minimal = df_minimal["instance_types"]
+
         df = df.drop("y", axis=1)
         df = df.drop("instance_types", axis=1)
+
+        df_minimal = df_minimal.drop("y", axis=1)
+        df_minimal = df_minimal.drop("instance_types", axis=1)
 
         # Do analysis leaving out and using as test each instance type
         fom_df = pandas.DataFrame(
@@ -596,7 +610,7 @@ def parse_data(indir, outdir):
         # Save and show the plot
         plot_path = os.path.join(
             models_dir,
-            f"prediction_error_boxplot_complete_withcost_{filename.replace('.csv', '.png')}",
+            f"prediction_error_boxplot_complete_withcost_{filename.replace('.csv', '.svg')}",
         )
         plt.savefig(plot_path, dpi=300)
         plt.close()
@@ -642,7 +656,7 @@ def parse_data(indir, outdir):
         plt.tight_layout(rect=[0, 0, 1, 0.96])
         plot_path = os.path.join(
             models_dir,
-            f"predicted_vs_actual_scatter_complete_withcost_{filename.replace('.csv', '.png')}",
+            f"predicted_vs_actual_scatter_complete_withcost_{filename.replace('.csv', '.svg')}",
         )
         plt.savefig(plot_path, dpi=300)
         print(f"Predicted vs. Actual scatter plot saved to {plot_path}")
@@ -719,7 +733,7 @@ def parse_data(indir, outdir):
         # Save and show the plot
         plot_path = os.path.join(
             models_dir,
-            f"prediction_error_boxplot_complete_withcost_{filename.replace('.csv', '.png')}",
+            f"prediction_error_boxplot_complete_withcost_{filename.replace('.csv', '.svg')}",
         )
         plt.savefig(plot_path, dpi=300)
         plt.close()
